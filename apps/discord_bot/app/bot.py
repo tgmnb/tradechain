@@ -214,7 +214,7 @@ async def call_api(
 
     url = f"{API_URL}{path}"
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
+        async with httpx.AsyncClient(timeout=20.0, trust_env=False) as client:
             if method == "POST":
                 response = await client.post(url, json=payload or {}, headers=headers)
             else:
