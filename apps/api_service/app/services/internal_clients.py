@@ -43,7 +43,7 @@ class InternalClients:
         )
 
     async def _post(self, url: str, json: dict, headers: dict[str, str]) -> dict:
-        async with httpx.AsyncClient(timeout=20.0) as client:
+        async with httpx.AsyncClient(timeout=self.settings.internal_http_timeout_seconds) as client:
             res = await client.post(url, json=json, headers=headers)
         res.raise_for_status()
         return res.json()

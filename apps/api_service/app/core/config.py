@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     agent_core_service_url: str = Field(default="http://agent-core:8002")
     archive_service_url: str = Field(default="http://archive-service:8003")
     evaluation_service_url: str = Field(default="http://evaluation-service:8004")
+    internal_http_timeout_seconds: float = Field(default=90.0)
 
 
 @lru_cache

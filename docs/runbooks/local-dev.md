@@ -46,6 +46,7 @@ Recommended:
 - Set `DISCORD_GUILD_ID` if you want slash commands to sync quickly in one server.
 - Use a dedicated channel for the bot and set `DISCORD_CHANNEL_ID` to restrict commands there.
 - If Discord access needs a proxy, set `DISCORD_PROXY_URL=http://host.docker.internal:7890`.
+- Enable `Message Content Intent` for the bot in the Discord developer portal if you want plain channel messages to trigger the agent flow.
 - After the bot starts, use `/system_health`, `/proposal_latest`, `/intel_update`, `/task_create`.
 
 If your proxy only listens on host `127.0.0.1`, run the bot on the host instead of Docker:

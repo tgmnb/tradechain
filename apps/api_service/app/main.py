@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from apps.api_service.app.api import events, health, proposals, tasks, workflows
+from apps.api_service.app.api import agent, events, health, proposals, tasks, workflows
 
 app = FastAPI(
     title="tradechain api-service",
@@ -13,3 +13,4 @@ app.include_router(tasks.router)
 app.include_router(events.router)
 app.include_router(proposals.router)
 app.include_router(workflows.router)
+app.include_router(agent.router)

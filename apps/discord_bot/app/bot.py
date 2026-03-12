@@ -33,6 +33,8 @@ class TradechainBot(discord.Client):
     def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
+        intents.message_content = True
+        intents.messages = True
         proxy_auth = None
         if DISCORD_PROXY_USERNAME and DISCORD_PROXY_PASSWORD:
             proxy_auth = aiohttp.BasicAuth(DISCORD_PROXY_USERNAME, DISCORD_PROXY_PASSWORD)
@@ -159,6 +161,21 @@ class TradechainBot(discord.Client):
                 )
             )
 
+        @self.tree.command(name="ask", description="Send a natural language request to the tradechain agent", guild=guild_obj)
+        @app_commands.describe(message="What you want the agent to do")
+        async def ask(interaction: discord.Interaction, message: str) -> None:
+            if not await self.ensure_allowed_channel(interaction):
+                return
+            await interaction.response.defer(thinking=True)
+            result = await self.run_agent_message(
+                text=message,
+                user_name=str(interaction.user),
+                user_id=str(interaction.user.id),
+                channel_id=str(interaction.channel_id),
+                guild_id=str(interaction.guild_id) if interaction.guild_id else None,
+            )
+            await self.send_agent_result(interaction.followup.send, result)
+
         if guild_obj:
             await self.tree.sync(guild=guild_obj)
         else:
@@ -198,6 +215,84 @@ class TradechainBot(discord.Client):
         )
         return False
 
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author.bot:
+            return
+        channel_id = allowed_channel_id()
+        if channel_id and message.channel.id != channel_id:
+            return
+        if message.content.startswith("/"):
+            return
+
+        async with message.channel.typing():
+            result = await self.run_agent_message(
+                text=message.content,
+                user_name=str(message.author),
+                user_id=str(message.author.id),
+                channel_id=str(message.channel.id),
+                guild_id=str(message.guild.id) if message.guild else None,
+            )
+        await message.reply(embed=embed_from_agent_result(result), mention_author=False)
+
+    async def run_agent_message(
+        self,
+        *,
+        text: str,
+        user_name: str,
+        user_id: str,
+        channel_id: str,
+        guild_id: str | None,
+    ) -> dict:
+        return await call_api(
+            "POST",
+            "/v1/agent/discord-message",
+            {
+                "text": text,
+                "user_name": user_name,
+                "user_id": user_id,
+                "channel_id": channel_id,
+                "guild_id": guild_id,
+            },
+        )
+
+    async def send_agent_result(self, sender, result: dict) -> None:
+        if "error" in result:
+            await sender(embed=as_embed("Agent Request Failed", result["error"], color=0xC0392B))
+            return
+        await sender(embed=embed_from_agent_result(result))
+
+
+def embed_from_agent_result(result: dict) -> discord.Embed:
+    route = result.get("route", "agent")
+    summary = result.get("summary", "No summary returned.")
+    color = 0x1F8B4C if route in {"health", "proposal_latest", "intel_update"} else 0x2E86C1
+    embed = as_embed(f"Agent Route: {route}", summary, color=color)
+
+    proposal = result.get("proposal") or {}
+    if proposal:
+        embed.add_field(name="Theme", value=str(proposal.get("theme", "-"))[:1024], inline=False)
+        embed.add_field(name="Action", value=str(proposal.get("recommended_action", "-")), inline=True)
+        embed.add_field(name="Requires Human", value=str(proposal.get("requires_human", False)), inline=True)
+
+    task = result.get("task") or {}
+    if task:
+        embed.add_field(name="Task ID", value=str(task.get("id", "-")), inline=False)
+
+    workflow = result.get("workflow") or {}
+    if workflow:
+        embed.add_field(
+            name="Workflow",
+            value="\n".join(
+                [
+                    f"status: `{workflow.get('status')}`",
+                    f"ingested: `{workflow.get('ingested')}`",
+                    f"proposals: `{workflow.get('created_proposals')}`",
+                ]
+            ),
+            inline=False,
+        )
+    return embed
+
 
 async def call_api(
     method: str,
@@ -214,7 +309,7 @@ async def call_api(
 
     url = f"{API_URL}{path}"
     try:
-        async with httpx.AsyncClient(timeout=20.0, trust_env=False) as client:
+        async with httpx.AsyncClient(timeout=90.0, trust_env=False) as client:
             if method == "POST":
                 response = await client.post(url, json=payload or {}, headers=headers)
             else:
