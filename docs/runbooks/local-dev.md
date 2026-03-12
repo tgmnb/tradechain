@@ -12,6 +12,13 @@
 3. `docker compose exec api-service alembic -c sql/migrations/alembic.ini upgrade head`
 4. Optional seed: `docker compose exec postgres psql -U tradechain -d tradechain -f /workspace/sql/seeds/001_skill_versions.sql`
 
+## Common Checks
+
+- `curl --noproxy '*' http://127.0.0.1:8000/healthz`
+- `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/intel-update/run -H 'X-API-Key: external-dev-key'`
+- `docker compose ps`
+- `docker compose logs --tail=100 api-service ingestion-service agent-core archive-service`
+
 ## Verify
 
 - `GET http://localhost:8000/healthz`
@@ -24,6 +31,18 @@ Import files from `workflows/n8n/*.json` and set environment variable `API_SERVI
 
 ## Discord bot
 
-Set `DISCORD_BOT_TOKEN`, optional `DISCORD_GUILD_ID`, then run:
+Set `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, optional `DISCORD_GUILD_ID`, then run:
 
 `docker compose --profile discord up discord-bot`
+
+Recommended:
+
+- Set `DISCORD_GUILD_ID` if you want slash commands to sync quickly in one server.
+- Use a dedicated channel for the bot and set `DISCORD_CHANNEL_ID` to restrict commands there.
+- If Discord access needs a proxy, set `DISCORD_PROXY_URL=http://host.docker.internal:7890`.
+- After the bot starts, use `/system_health`, `/proposal_latest`, `/intel_update`, `/task_create`.
+
+If your proxy only listens on host `127.0.0.1`, run the bot on the host instead of Docker:
+
+- `nohup ./scripts/run_discord_bot_host.sh >/tmp/tradechain-discord-bot.log 2>&1 &`
+- `tail -f /tmp/tradechain-discord-bot.log`

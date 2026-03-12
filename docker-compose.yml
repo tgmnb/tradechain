@@ -193,10 +193,16 @@ services:
       PYTHONPATH: /workspace
       DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
       DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID}
+      DISCORD_PROXY_URL: ${DISCORD_PROXY_URL}
+      DISCORD_PROXY_USERNAME: ${DISCORD_PROXY_USERNAME}
+      DISCORD_PROXY_PASSWORD: ${DISCORD_PROXY_PASSWORD}
       DISCORD_BOT_API_URL: ${DISCORD_BOT_API_URL}
       DISCORD_BOT_API_KEY: ${DISCORD_BOT_API_KEY}
     volumes:
       - ./:/workspace
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - api-service
 

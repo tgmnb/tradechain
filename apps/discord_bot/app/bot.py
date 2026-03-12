@@ -1,6 +1,6 @@
-import asyncio
 import os
 
+import aiohttp
 import discord
 import httpx
 from discord import app_commands
@@ -9,20 +9,55 @@ API_URL = os.getenv("DISCORD_BOT_API_URL", "http://api-service:8000")
 API_KEY = os.getenv("DISCORD_BOT_API_KEY", "external-dev-key")
 DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
 GUILD_ID = os.getenv("DISCORD_GUILD_ID", "")
+CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID", "")
+DISCORD_PROXY_URL = os.getenv("DISCORD_PROXY_URL", "")
+DISCORD_PROXY_USERNAME = os.getenv("DISCORD_PROXY_USERNAME", "")
+DISCORD_PROXY_PASSWORD = os.getenv("DISCORD_PROXY_PASSWORD", "")
+
+
+def channel_object() -> discord.Object | None:
+    return discord.Object(id=int(GUILD_ID)) if GUILD_ID else None
+
+
+def allowed_channel_id() -> int | None:
+    return int(CHANNEL_ID) if CHANNEL_ID else None
+
+
+def as_embed(title: str, description: str, *, color: int) -> discord.Embed:
+    embed = discord.Embed(title=title, description=description, color=color)
+    embed.set_footer(text="tradechain")
+    return embed
 
 
 class TradechainBot(discord.Client):
     def __init__(self) -> None:
         intents = discord.Intents.default()
-        super().__init__(intents=intents)
+        intents.guilds = True
+        proxy_auth = None
+        if DISCORD_PROXY_USERNAME and DISCORD_PROXY_PASSWORD:
+            proxy_auth = aiohttp.BasicAuth(DISCORD_PROXY_USERNAME, DISCORD_PROXY_PASSWORD)
+
+        super().__init__(
+            intents=intents,
+            proxy=DISCORD_PROXY_URL or None,
+            proxy_auth=proxy_auth,
+        )
         self.tree = app_commands.CommandTree(self)
+        self.startup_notified = False
 
     async def setup_hook(self) -> None:
-        guild_obj = discord.Object(id=int(GUILD_ID)) if GUILD_ID else None
+        guild_obj = channel_object()
 
         @self.tree.command(name="task_create", description="Create a task in tradechain", guild=guild_obj)
-        @app_commands.describe(title="Task title", chain_type="Workflow chain type")
-        async def task_create(interaction: discord.Interaction, title: str, chain_type: str = "major_task") -> None:
+        @app_commands.describe(title="Task title", chain_type="Workflow chain type", goal="Optional goal or note")
+        async def task_create(
+            interaction: discord.Interaction,
+            title: str,
+            chain_type: str = "major_task",
+            goal: str = "",
+        ) -> None:
+            if not await self.ensure_allowed_channel(interaction):
+                return
             await interaction.response.defer(thinking=True)
             payload = {
                 "title": title,
@@ -30,53 +65,152 @@ class TradechainBot(discord.Client):
                 "source": "discord",
                 "chain_type": chain_type,
                 "priority": 50,
-                "goal_json": {},
-                "context_json": {},
+                "goal_json": {"text": goal} if goal else {},
+                "context_json": {"channel_id": str(interaction.channel_id)},
                 "created_by": str(interaction.user),
             }
             result = await call_api("POST", "/v1/tasks", payload)
             if "error" in result:
-                await interaction.followup.send(f"create task failed: {result['error']}")
+                await interaction.followup.send(embed=as_embed("Task Create Failed", result["error"], color=0xC0392B))
                 return
-            await interaction.followup.send(f"task created: `{result.get('id')}`")
+            await interaction.followup.send(
+                embed=as_embed(
+                    "Task Created",
+                    "\n".join(
+                        [
+                            f"ID: `{result.get('id')}`",
+                            f"Type: `{result.get('type')}`",
+                            f"Chain: `{result.get('chain_type')}`",
+                            f"Status: `{result.get('status')}`",
+                        ]
+                    ),
+                    color=0x1F8B4C,
+                )
+            )
 
         @self.tree.command(name="proposal_latest", description="Get latest proposal", guild=guild_obj)
         async def proposal_latest(interaction: discord.Interaction) -> None:
+            if not await self.ensure_allowed_channel(interaction):
+                return
             await interaction.response.defer(thinking=True)
             result = await call_api("GET", "/v1/proposals/latest")
             if "error" in result:
-                await interaction.followup.send(f"query failed: {result['error']}")
+                await interaction.followup.send(embed=as_embed("Proposal Query Failed", result["error"], color=0xC0392B))
                 return
             await interaction.followup.send(
-                "\n".join(
-                    [
-                        f"proposal: `{result.get('id')}`",
-                        f"theme: {result.get('theme')}",
-                        f"status: {result.get('status')}",
-                        f"requires_human: {result.get('requires_human')}",
-                    ]
+                embed=as_embed(
+                    "Latest Proposal",
+                    "\n".join(
+                        [
+                            f"ID: `{result.get('id')}`",
+                            f"Theme: {result.get('theme')}",
+                            f"Status: `{result.get('status')}`",
+                            f"Action: `{result.get('recommended_action')}`",
+                            f"Requires Human: `{result.get('requires_human')}`",
+                        ]
+                    ),
+                    color=0x2E86C1,
+                )
+            )
+
+        @self.tree.command(name="intel_update", description="Run the intel-update workflow", guild=guild_obj)
+        async def intel_update(interaction: discord.Interaction) -> None:
+            if not await self.ensure_allowed_channel(interaction):
+                return
+            await interaction.response.defer(thinking=True)
+            headers = {
+                "X-Request-ID": f"discord-{interaction.id}",
+                "X-Chain-Type": "intel_update",
+                "X-Actor": str(interaction.user),
+            }
+            result = await call_api("POST", "/v1/workflows/intel-update/run", {}, extra_headers=headers)
+            if "error" in result:
+                await interaction.followup.send(embed=as_embed("Workflow Failed", result["error"], color=0xC0392B))
+                return
+            await interaction.followup.send(
+                embed=as_embed(
+                    "Intel Update Complete",
+                    "\n".join(
+                        [
+                            f"Status: `{result.get('status')}`",
+                            f"Ingested: `{result.get('ingested')}`",
+                            f"Created Events: `{result.get('created_events')}`",
+                            f"Created Proposals: `{result.get('created_proposals')}`",
+                        ]
+                    ),
+                    color=0x8E44AD,
                 )
             )
 
         @self.tree.command(name="system_health", description="Check API service health", guild=guild_obj)
         async def system_health(interaction: discord.Interaction) -> None:
+            if not await self.ensure_allowed_channel(interaction):
+                return
             await interaction.response.defer(thinking=True)
             result = await call_api("GET", "/healthz", auth=False)
             if "error" in result:
-                await interaction.followup.send(f"health check failed: {result['error']}")
+                await interaction.followup.send(embed=as_embed("Health Check Failed", result["error"], color=0xC0392B))
                 return
-            await interaction.followup.send(f"api-service health: `{result.get('status', 'unknown')}`")
+            await interaction.followup.send(
+                embed=as_embed(
+                    "System Health",
+                    f"api-service health: `{result.get('status', 'unknown')}`",
+                    color=0x1F8B4C,
+                )
+            )
 
         if guild_obj:
             await self.tree.sync(guild=guild_obj)
         else:
             await self.tree.sync()
 
+    async def on_ready(self) -> None:
+        if self.startup_notified:
+            return
+        self.startup_notified = True
+        channel_id = allowed_channel_id()
+        if channel_id:
+            try:
+                channel = self.get_channel(channel_id) or await self.fetch_channel(channel_id)
+                if hasattr(channel, "send"):
+                    await channel.send(
+                        embed=as_embed(
+                            "Tradechain Bot Online",
+                            "Commands are live for this channel.\nUse `/system_health`, `/proposal_latest`, `/intel_update`, `/task_create`.",
+                            color=0x1F8B4C,
+                        )
+                    )
+            except Exception:
+                pass
 
-async def call_api(method: str, path: str, payload: dict | None = None, auth: bool = True) -> dict:
+    async def ensure_allowed_channel(self, interaction: discord.Interaction) -> bool:
+        channel_id = allowed_channel_id()
+        if not channel_id or interaction.channel_id == channel_id:
+            return True
+
+        await interaction.response.send_message(
+            embed=as_embed(
+                "Wrong Channel",
+                f"Use this bot in <#{channel_id}>.",
+                color=0xF39C12,
+            ),
+            ephemeral=True,
+        )
+        return False
+
+
+async def call_api(
+    method: str,
+    path: str,
+    payload: dict | None = None,
+    auth: bool = True,
+    extra_headers: dict[str, str] | None = None,
+) -> dict:
     headers = {}
     if auth:
         headers["X-API-Key"] = API_KEY
+    if extra_headers:
+        headers.update(extra_headers)
 
     url = f"{API_URL}{path}"
     try:
@@ -86,7 +220,7 @@ async def call_api(method: str, path: str, payload: dict | None = None, auth: bo
             else:
                 response = await client.get(url, headers=headers)
         response.raise_for_status()
-        return response.json()
+        return response.json() if response.content else {}
     except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
 

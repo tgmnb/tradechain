@@ -215,6 +215,7 @@ Implemented in `apps/discord_bot/app/bot.py`:
 
 - `/task_create`
 - `/proposal_latest`
+- `/intel_update`
 - `/system_health`
 
 ## Testing status
