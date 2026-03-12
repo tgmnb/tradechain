@@ -19,6 +19,12 @@
 - `docker compose ps`
 - `docker compose logs --tail=100 api-service ingestion-service agent-core archive-service`
 
+## LLM Config
+
+- `LLM_PROVIDER=heuristic` keeps proposal generation local and deterministic.
+- `LLM_PROVIDER=minimax` enables MiniMax proposal generation through `LLM_BASE_URL`.
+- In the current environment, `agent-core` can reach MiniMax directly, so `LLM_PROXY_URL` should stay empty unless container networking changes.
+
 ## Verify
 
 - `GET http://localhost:8000/healthz`

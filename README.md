@@ -136,6 +136,22 @@ These are forwarded across services for traceability.
 - `POST /v1/workflows/nightly-improvement/run` (placeholder)
 - `GET /healthz`
 
+## LLM provider
+
+`agent-core` now supports a provider abstraction for proposal generation.
+
+- `LLM_PROVIDER=heuristic`: no external model call, local fallback generation
+- `LLM_PROVIDER=minimax`: calls MiniMax through the OpenAI-compatible API
+
+Relevant env vars:
+
+- `LLM_PROVIDER`
+- `LLM_BASE_URL`
+- `LLM_API_KEY`
+- `LLM_MODEL`
+- `LLM_TIMEOUT_SECONDS`
+- `LLM_PROXY_URL`
+
 ## Internal APIs
 
 - `POST /internal/ingestion/fetch` (`ingestion-service`)
