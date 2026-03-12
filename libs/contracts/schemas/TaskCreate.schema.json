@@ -1,0 +1,54 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Title",
+      "type": "string"
+    },
+    "type": {
+      "default": "major_task",
+      "maxLength": 50,
+      "title": "Type",
+      "type": "string"
+    },
+    "source": {
+      "default": "discord",
+      "maxLength": 50,
+      "title": "Source",
+      "type": "string"
+    },
+    "chain_type": {
+      "default": "major_task",
+      "maxLength": 50,
+      "title": "Chain Type",
+      "type": "string"
+    },
+    "priority": {
+      "default": 50,
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Priority",
+      "type": "integer"
+    },
+    "goal_json": {
+      "title": "Goal Json",
+      "type": "object"
+    },
+    "context_json": {
+      "title": "Context Json",
+      "type": "object"
+    },
+    "created_by": {
+      "default": "user",
+      "title": "Created By",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "title": "TaskCreate",
+  "type": "object"
+}

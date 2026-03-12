@@ -1,0 +1,15 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
+sqlalchemy==2.0.43
+psycopg[binary]==3.2.9
+alembic==1.16.5
+httpx==0.28.1
+redis==6.4.0
+langgraph==0.6.6
+boto3==1.40.24
+python-dateutil==2.9.0.post0
+python-json-logger==3.3.0
+discord.py==2.6.2
+pytest==8.4.2

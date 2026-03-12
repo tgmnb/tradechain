@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "ProposalStatus": {
+      "enum": [
+        "draft",
+        "pending_review",
+        "approved",
+        "rejected"
+      ],
+      "title": "ProposalStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "source_event_id": {
+      "format": "uuid",
+      "title": "Source Event Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "theme": {
+      "title": "Theme",
+      "type": "string"
+    },
+    "asset_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Asset Scope",
+      "type": "array"
+    },
+    "initial_logic": {
+      "title": "Initial Logic",
+      "type": "string"
+    },
+    "trigger_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Trigger Conditions",
+      "type": "array"
+    },
+    "invalidation_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Invalidation Conditions",
+      "type": "array"
+    },
+    "risks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Risks",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 0.5,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "status": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProposalStatus"
+        }
+      ],
+      "default": "draft"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "source_event_id",
+    "theme",
+    "initial_logic",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ProposalDraft",
+  "type": "object"
+}

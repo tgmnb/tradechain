@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "ReviewDecision": {
+      "enum": [
+        "pass",
+        "reject"
+      ],
+      "title": "ReviewDecision",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "maxLength": 30,
+      "title": "Object Type",
+      "type": "string"
+    },
+    "object_id": {
+      "format": "uuid",
+      "title": "Object Id",
+      "type": "string"
+    },
+    "reviewer_type": {
+      "maxLength": 30,
+      "title": "Reviewer Type",
+      "type": "string"
+    },
+    "reviewer_name": {
+      "maxLength": 100,
+      "title": "Reviewer Name",
+      "type": "string"
+    },
+    "decision": {
+      "$ref": "#/$defs/ReviewDecision"
+    },
+    "comments": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Comments"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Score"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "object_type",
+    "object_id",
+    "reviewer_type",
+    "reviewer_name",
+    "decision",
+    "created_at"
+  ],
+  "title": "ReviewRecord",
+  "type": "object"
+}

@@ -1,0 +1,208 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: tradechain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./:/workspace:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: tradechain-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: tradechain-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: tradechain-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: tradechain-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: 0.0.0.0
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      GENERIC_TIMEZONE: Asia/Shanghai
+      API_SERVICE_API_KEY: ${API_SERVICE_API_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows/n8n:/workflows
+    depends_on:
+      - api-service
+
+  api-service:
+    build:
+      context: .
+      dockerfile: apps/api_service/Dockerfile
+    container_name: tradechain-api-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /workspace
+      SERVICE_NAME: api-service
+      DATABASE_URL: ${DATABASE_URL}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      API_SERVICE_API_KEY: ${API_SERVICE_API_KEY}
+      INGESTION_SERVICE_URL: ${INGESTION_SERVICE_URL}
+      AGENT_CORE_SERVICE_URL: ${AGENT_CORE_SERVICE_URL}
+      ARCHIVE_SERVICE_URL: ${ARCHIVE_SERVICE_URL}
+      EVALUATION_SERVICE_URL: ${EVALUATION_SERVICE_URL}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ingestion-service:
+        condition: service_started
+      agent-core:
+        condition: service_started
+
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: apps/ingestion_service/Dockerfile
+    container_name: tradechain-ingestion-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /workspace
+      SERVICE_NAME: ingestion-service
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8001:8001"
+
+  agent-core:
+    build:
+      context: .
+      dockerfile: apps/agent_core/Dockerfile
+    container_name: tradechain-agent-core
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /workspace
+      SERVICE_NAME: agent-core
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      ARCHIVE_SERVICE_URL: ${ARCHIVE_SERVICE_URL}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8002:8002"
+    depends_on:
+      - archive-service
+
+  archive-service:
+    build:
+      context: .
+      dockerfile: apps/archive_service/Dockerfile
+    container_name: tradechain-archive-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /workspace
+      SERVICE_NAME: archive-service
+      DATABASE_URL: ${DATABASE_URL}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_SECURE: ${MINIO_SECURE}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  evaluation-service:
+    build:
+      context: .
+      dockerfile: apps/evaluation_service/Dockerfile
+    container_name: tradechain-evaluation-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /workspace
+      SERVICE_NAME: evaluation-service
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8004:8004"
+
+  discord-bot:
+    build:
+      context: .
+      dockerfile: apps/discord_bot/Dockerfile
+    container_name: tradechain-discord-bot
+    restart: unless-stopped
+    profiles: ["discord"]
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /workspace
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+      DISCORD_BOT_API_URL: ${DISCORD_BOT_API_URL}
+      DISCORD_BOT_API_KEY: ${DISCORD_BOT_API_KEY}
+    volumes:
+      - ./:/workspace
+    depends_on:
+      - api-service
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  qdrant_data:
+  n8n_data:

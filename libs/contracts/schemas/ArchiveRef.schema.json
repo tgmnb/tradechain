@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "title": "Object Type",
+      "type": "string"
+    },
+    "object_id": {
+      "format": "uuid",
+      "title": "Object Id",
+      "type": "string"
+    },
+    "archive_key": {
+      "title": "Archive Key",
+      "type": "string"
+    },
+    "storage_type": {
+      "title": "Storage Type",
+      "type": "string"
+    },
+    "metadata": {
+      "title": "Metadata",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "object_type",
+    "object_id",
+    "archive_key",
+    "storage_type",
+    "created_at"
+  ],
+  "title": "ArchiveRef",
+  "type": "object"
+}

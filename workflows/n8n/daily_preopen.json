@@ -1,0 +1,46 @@
+{
+  "name": "daily_preopen",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "days", "daysInterval": 1 }]
+        }
+      },
+      "id": "schedule_trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api-service:8000/v1/workflows/daily-preopen/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.API_SERVICE_API_KEY}}" },
+            { "name": "X-Request-ID", "value": "={{$execution.id}}" },
+            { "name": "X-Chain-Type", "value": "daily_preopen" },
+            { "name": "X-Actor", "value": "n8n" }
+          ]
+        }
+      },
+      "id": "call_placeholder",
+      "name": "Call Placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [540, 260]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Call Placeholder", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "versionId": "daily-preopen-v1"
+}

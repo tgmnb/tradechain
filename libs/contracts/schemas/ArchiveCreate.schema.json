@@ -1,0 +1,36 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "object_type": {
+      "maxLength": 50,
+      "title": "Object Type",
+      "type": "string"
+    },
+    "object_id": {
+      "format": "uuid",
+      "title": "Object Id",
+      "type": "string"
+    },
+    "payload": {
+      "title": "Payload",
+      "type": "object"
+    },
+    "metadata": {
+      "title": "Metadata",
+      "type": "object"
+    },
+    "storage_type": {
+      "default": "minio",
+      "maxLength": 30,
+      "title": "Storage Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "object_type",
+    "object_id",
+    "payload"
+  ],
+  "title": "ArchiveCreate",
+  "type": "object"
+}

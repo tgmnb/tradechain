@@ -1,0 +1,61 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "graph_name": {
+      "title": "Graph Name",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "requires_human": {
+      "default": false,
+      "title": "Requires Human",
+      "type": "boolean"
+    },
+    "proposal": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Proposal"
+    },
+    "archive_ref": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Archive Ref"
+    },
+    "messages": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Messages",
+      "type": "array"
+    },
+    "finished_at": {
+      "format": "date-time",
+      "title": "Finished At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "graph_name",
+    "status",
+    "finished_at"
+  ],
+  "title": "GraphRunResponse",
+  "type": "object"
+}

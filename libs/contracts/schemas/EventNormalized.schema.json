@@ -1,0 +1,91 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "source": {
+      "maxLength": 100,
+      "title": "Source",
+      "type": "string"
+    },
+    "event_type": {
+      "maxLength": 50,
+      "title": "Event Type",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 300,
+      "title": "Title",
+      "type": "string"
+    },
+    "content": {
+      "title": "Content",
+      "type": "string"
+    },
+    "asset_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Asset Scope",
+      "type": "array"
+    },
+    "impact_direction": {
+      "default": "neutral",
+      "maxLength": 20,
+      "title": "Impact Direction",
+      "type": "string"
+    },
+    "confidence": {
+      "default": 0.5,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "raw_payload": {
+      "title": "Raw Payload",
+      "type": "object"
+    },
+    "occurred_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Occurred At"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "dedup_key": {
+      "title": "Dedup Key",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source",
+    "event_type",
+    "title",
+    "content",
+    "id",
+    "dedup_key",
+    "created_at"
+  ],
+  "title": "EventNormalized",
+  "type": "object"
+}
