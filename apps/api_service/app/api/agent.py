@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from apps.api_service.app.agent import dispatch_discord_message
 from apps.api_service.app.api.proposals import get_latest_proposal
 from apps.api_service.app.api.tasks import create_task
 from apps.api_service.app.api.workflows import run_intel_update
@@ -44,20 +45,32 @@ async def handle_discord_message(
     db: Session = Depends(get_db),
 ) -> DiscordMessageResponse:
     text = payload.text.strip()
-    lowered = text.lower()
+    decision = dispatch_discord_message(text)
 
-    if _matches_any(lowered, ["health", "状态", "健康", "系统"]):
+    if decision.route == "help":
         return DiscordMessageResponse(
-            route="health",
+            route=decision.route,
+            summary=decision.summary,
+        )
+
+    if decision.route == "health":
+        return DiscordMessageResponse(
+            route=decision.route,
             summary="System health is `ok`.",
         )
 
-    if _matches_any(lowered, ["proposal", "latest proposal", "提案", "最新建议"]):
+    if decision.route == "proposal_latest":
         proposal = await get_latest_proposal(db=db)
         return DiscordMessageResponse(
-            route="proposal_latest",
+            route=decision.route,
             summary=_proposal_summary(proposal.model_dump(mode="json")),
             proposal=proposal.model_dump(mode="json"),
+        )
+
+    if not decision.activate_chain:
+        return DiscordMessageResponse(
+            route=decision.route,
+            summary=decision.summary,
         )
 
     task = await create_task(
@@ -85,9 +98,10 @@ async def handle_discord_message(
     proposal_dict = proposal.model_dump(mode="json")
 
     return DiscordMessageResponse(
-        route="intel_update",
+        route=decision.route,
         summary="\n".join(
             [
+                decision.summary,
                 f"Task `{task.id}` created.",
                 f"Workflow status: `{workflow_result.get('status')}`.",
                 _proposal_summary(proposal_dict),
@@ -97,10 +111,6 @@ async def handle_discord_message(
         workflow=workflow_result,
         proposal=proposal_dict,
     )
-
-
-def _matches_any(text: str, patterns: list[str]) -> bool:
-    return any(pattern in text for pattern in patterns)
 
 
 def _title_from_text(text: str) -> str:

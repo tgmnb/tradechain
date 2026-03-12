@@ -234,6 +234,12 @@ Implemented in `apps/discord_bot/app/bot.py`:
 - `/intel_update`
 - `/system_health`
 
+Plain channel messages also flow through a top-level politburo dispatcher:
+
+- direct chat/help requests are answered immediately
+- health and latest-proposal queries are handled without activating research chains
+- research/analysis/proposal-generation requests are escalated into the downstream workflow
+
 ## Testing status
 
 Test files and scenarios are provided under `tests/`, but this delivery intentionally does **not** execute integration/regression runs yet.

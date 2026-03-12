@@ -48,6 +48,10 @@ Recommended:
 - If Discord access needs a proxy, set `DISCORD_PROXY_URL=http://host.docker.internal:7890`.
 - Enable `Message Content Intent` for the bot in the Discord developer portal if you want plain channel messages to trigger the agent flow.
 - After the bot starts, use `/system_health`, `/proposal_latest`, `/intel_update`, `/task_create`.
+- Plain channel messages now go through the top-level politburo agent:
+  - simple chat/help queries are answered directly
+  - health/proposal queries are served directly
+  - research/analysis requests escalate into the downstream `intel_update` chain
 
 If your proxy only listens on host `127.0.0.1`, run the bot on the host instead of Docker:
 

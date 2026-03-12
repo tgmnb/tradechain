@@ -291,6 +291,12 @@ def embed_from_agent_result(result: dict) -> discord.Embed:
             ),
             inline=False,
         )
+    elif route in {"help", "chat"}:
+        embed.add_field(
+            name="Dispatch",
+            value="Handled directly by the politburo agent. No downstream workflow was activated.",
+            inline=False,
+        )
     return embed
 
 
