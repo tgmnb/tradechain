@@ -13,6 +13,7 @@ from apps.api_service.app.api.tasks import create_task
 from apps.api_service.app.api.workflows import run_intel_update
 from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import get_db
+from apps.api_service.app.services.politburo_responder import politburo_responder
 from libs.contracts.task import TaskCreate, TaskRead
 
 router = APIRouter(prefix="/v1/agent", tags=["agent"], dependencies=[Depends(require_api_key)])
@@ -50,27 +51,44 @@ async def handle_discord_message(
     if decision.route == "help":
         return DiscordMessageResponse(
             route=decision.route,
-            summary=decision.summary,
+            summary=await politburo_responder.reply(
+                route=decision.route,
+                user_text=text,
+                context={"capabilities": ["health", "proposal_latest", "research", "analysis", "proposal_generation"]},
+            ),
         )
 
     if decision.route == "health":
         return DiscordMessageResponse(
             route=decision.route,
-            summary="System health is `ok`.",
+            summary=await politburo_responder.reply(
+                route=decision.route,
+                user_text=text,
+                context={"status": "ok"},
+            ),
         )
 
     if decision.route == "proposal_latest":
         proposal = await get_latest_proposal(db=db)
+        proposal_dict = proposal.model_dump(mode="json")
         return DiscordMessageResponse(
             route=decision.route,
-            summary=_proposal_summary(proposal.model_dump(mode="json")),
-            proposal=proposal.model_dump(mode="json"),
+            summary=await politburo_responder.reply(
+                route=decision.route,
+                user_text=text,
+                context=proposal_dict,
+            ),
+            proposal=proposal_dict,
         )
 
     if not decision.activate_chain:
         return DiscordMessageResponse(
             route=decision.route,
-            summary=decision.summary,
+            summary=await politburo_responder.reply(
+                route=decision.route,
+                user_text=text,
+                context={"policy": "direct_reply_without_research_workflow"},
+            ),
         )
 
     task = await create_task(

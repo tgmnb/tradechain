@@ -23,6 +23,7 @@
 
 - `LLM_PROVIDER=heuristic` keeps proposal generation local and deterministic.
 - `LLM_PROVIDER=minimax` enables MiniMax proposal generation through `LLM_BASE_URL`.
+- `api-service` uses the same `LLM_*` settings for top-level direct replies from the politburo agent.
 - In the current environment, `agent-core` can reach MiniMax directly, so `LLM_PROXY_URL` should stay empty unless container networking changes.
 
 ## Verify
