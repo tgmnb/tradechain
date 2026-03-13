@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 import httpx
@@ -41,7 +42,7 @@ def call_minimax_json(*, settings: Settings, system_prompt: str, user_prompt: st
 
 
 def extract_json_object(content: str) -> dict[str, Any]:
-    cleaned = content.strip()
+    cleaned = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
     if "```" in cleaned:
         parts = cleaned.split("```")
         for part in parts:
@@ -51,8 +52,15 @@ def extract_json_object(content: str) -> dict[str, Any]:
             if candidate.startswith("{") and candidate.endswith("}"):
                 return json.loads(candidate)
 
-    start = cleaned.find("{")
-    end = cleaned.rfind("}")
-    if start == -1 or end == -1 or start >= end:
-        raise ValueError("model did not return a JSON object")
-    return json.loads(cleaned[start : end + 1])
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(cleaned):
+        if char != "{":
+            continue
+        try:
+            parsed, _ = decoder.raw_decode(cleaned[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+
+    raise ValueError("model did not return a JSON object")

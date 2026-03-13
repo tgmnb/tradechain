@@ -9,6 +9,10 @@ from apps.api_service.app.core.config import get_settings
 class InternalClients:
     def __init__(self) -> None:
         self.settings = get_settings()
+        # Planning graphs can span multiple model/archive steps, so a short
+        # default request timeout causes the API layer to fail before agent-core
+        # has a chance to complete or fallback.
+        self.timeout = httpx.Timeout(self.settings.internal_request_timeout_seconds, connect=10.0)
 
     def headers_from_request(self, request: Request, chain_type: str = "intel_update") -> dict[str, str]:
         request_id = request.headers.get("X-Request-ID", str(uuid4()))
@@ -68,7 +72,7 @@ class InternalClients:
         )
 
     async def _post(self, url: str, json: dict, headers: dict[str, str]) -> dict:
-        async with httpx.AsyncClient(timeout=20.0, trust_env=False) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
             res = await client.post(url, json=json, headers=headers)
         res.raise_for_status()
         return res.json()

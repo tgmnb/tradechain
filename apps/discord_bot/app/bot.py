@@ -1,9 +1,16 @@
+import asyncio
 import os
+import socket
 
 import aiohttp
 import discord
 import httpx
 from discord import app_commands
+
+try:
+    from aiohttp_socks import ProxyConnector
+except ImportError:  # pragma: no cover - optional until dependency is installed in runtime image
+    ProxyConnector = None
 
 API_URL = os.getenv("DISCORD_BOT_API_URL", "http://api-service:8000")
 API_KEY = os.getenv("DISCORD_BOT_API_KEY", "external-dev-key")
@@ -13,6 +20,8 @@ CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID", "")
 DISCORD_PROXY_URL = os.getenv("DISCORD_PROXY_URL", "")
 DISCORD_PROXY_USERNAME = os.getenv("DISCORD_PROXY_USERNAME", "")
 DISCORD_PROXY_PASSWORD = os.getenv("DISCORD_PROXY_PASSWORD", "")
+DISCORD_PROXY_FORCE_IPV4 = os.getenv("DISCORD_PROXY_FORCE_IPV4", "true").lower() in {"1", "true", "yes", "on"}
+DISCORD_PROXY_DNS_CACHE_SECONDS = int(os.getenv("DISCORD_PROXY_DNS_CACHE_SECONDS", "300"))
 
 
 def channel_object() -> discord.Object | None:
@@ -28,18 +37,51 @@ def as_embed(title: str, description: str, *, color: int) -> discord.Embed:
     embed.set_footer(text="tradechain")
     return embed
 
+def build_discord_connector(loop: asyncio.AbstractEventLoop) -> aiohttp.BaseConnector | None:
+    if not DISCORD_PROXY_URL:
+        return aiohttp.TCPConnector(
+            loop=loop,
+            family=socket.AF_INET if DISCORD_PROXY_FORCE_IPV4 else socket.AF_UNSPEC,
+            ttl_dns_cache=DISCORD_PROXY_DNS_CACHE_SECONDS,
+            enable_cleanup_closed=True,
+            limit=0,
+        )
+
+    if DISCORD_PROXY_URL.startswith(("socks5://", "socks4://")):
+        if ProxyConnector is None:
+            raise RuntimeError("aiohttp-socks is required for SOCKS proxy support")
+        return ProxyConnector.from_url(DISCORD_PROXY_URL, loop=loop)
+
+    if DISCORD_PROXY_URL.startswith(("http://", "https://")):
+        # Clash-style HTTP proxies are more stable here when the Discord client
+        # avoids IPv6/happy-eyeballs churn and keeps DNS/socket reuse predictable.
+        return aiohttp.TCPConnector(
+            loop=loop,
+            family=socket.AF_INET if DISCORD_PROXY_FORCE_IPV4 else socket.AF_UNSPEC,
+            ttl_dns_cache=DISCORD_PROXY_DNS_CACHE_SECONDS,
+            enable_cleanup_closed=True,
+            limit=0,
+        )
+
+    return None
+
 
 class TradechainBot(discord.Client):
-    def __init__(self) -> None:
+    def __init__(self, *, connector: aiohttp.BaseConnector | None) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
+        intents.message_content = True
         proxy_auth = None
+        proxy_url = None
         if DISCORD_PROXY_USERNAME and DISCORD_PROXY_PASSWORD:
             proxy_auth = aiohttp.BasicAuth(DISCORD_PROXY_USERNAME, DISCORD_PROXY_PASSWORD)
+        if DISCORD_PROXY_URL.startswith(("http://", "https://")):
+            proxy_url = DISCORD_PROXY_URL
 
         super().__init__(
             intents=intents,
-            proxy=DISCORD_PROXY_URL or None,
+            connector=connector,
+            proxy=proxy_url,
             proxy_auth=proxy_auth,
         )
         self.tree = app_commands.CommandTree(self)
@@ -198,6 +240,94 @@ class TradechainBot(discord.Client):
         )
         return False
 
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author.bot:
+            return
+
+        channel_id = allowed_channel_id()
+        if channel_id and message.channel.id != channel_id:
+            return
+
+        content = (message.content or "").strip()
+        if not content:
+            return
+
+        mentioned = self.user in message.mentions if self.user else False
+        normalized = content.lower()
+        if mentioned and self.user:
+            normalized = normalized.replace(f"<@{self.user.id}>", "").replace(f"<@!{self.user.id}>", "").strip()
+
+        if not mentioned and not normalized.startswith(("tc ", "tradechain ")):
+            return
+
+        if normalized.startswith("tc "):
+            normalized = normalized[3:].strip()
+        elif normalized.startswith("tradechain "):
+            normalized = normalized[len("tradechain "):].strip()
+
+        if normalized in {"", "help", "?", "菜单", "命令"}:
+            await message.reply(
+                "可用消息命令：`help`、`health`、`proposal latest`、`intel update`。\n"
+                "也可以继续用斜杠命令：`/system_health`、`/proposal_latest`、`/intel_update`、`/task_create`。",
+                mention_author=False,
+            )
+            return
+
+        if normalized in {"health", "healthz", "status"}:
+            result = await call_api("GET", "/healthz", auth=False)
+            if "error" in result:
+                await message.reply(f"health check failed: {result['error']}", mention_author=False)
+                return
+            await message.reply(f"api-service health: `{result.get('status', 'unknown')}`", mention_author=False)
+            return
+
+        if normalized in {"proposal latest", "latest proposal", "latest"}:
+            result = await call_api("GET", "/v1/proposals/latest")
+            if "error" in result:
+                await message.reply(f"proposal query failed: {result['error']}", mention_author=False)
+                return
+            await message.reply(
+                "\n".join(
+                    [
+                        f"ID: `{result.get('id')}`",
+                        f"Theme: {result.get('theme')}",
+                        f"Status: `{result.get('status')}`",
+                        f"Action: `{result.get('recommended_action')}`",
+                        f"Requires Human: `{result.get('requires_human')}`",
+                    ]
+                ),
+                mention_author=False,
+            )
+            return
+
+        if normalized in {"intel update", "intel", "run intel"}:
+            headers = {
+                "X-Request-ID": f"discord-message-{message.id}",
+                "X-Chain-Type": "intel_update",
+                "X-Actor": str(message.author),
+            }
+            result = await call_api("POST", "/v1/workflows/intel-update/run", {}, extra_headers=headers)
+            if "error" in result:
+                await message.reply(f"workflow failed: {result['error']}", mention_author=False)
+                return
+            await message.reply(
+                "\n".join(
+                    [
+                        f"Status: `{result.get('status')}`",
+                        f"Ingested: `{result.get('ingested')}`",
+                        f"Created Events: `{result.get('created_events')}`",
+                        f"Created Proposals: `{result.get('created_proposals')}`",
+                    ]
+                ),
+                mention_author=False,
+            )
+            return
+
+        await message.reply(
+            "没识别这条消息。试试 `@bot help`、`@bot health`、`@bot proposal latest`、`@bot intel update`。",
+            mention_author=False,
+        )
+
 
 async def call_api(
     method: str,
@@ -229,8 +359,15 @@ def main() -> None:
     if not DISCORD_TOKEN:
         raise SystemExit("DISCORD_BOT_TOKEN is empty. Set it in .env before running discord-bot profile.")
 
-    client = TradechainBot()
-    client.run(DISCORD_TOKEN)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    connector = build_discord_connector(loop)
+    client = TradechainBot(connector=connector)
+    try:
+        loop.run_until_complete(client.start(DISCORD_TOKEN))
+    finally:
+        loop.run_until_complete(client.close())
+        loop.close()
 
 
 if __name__ == "__main__":
