@@ -1,0 +1,13 @@
+skill_name: news_parse_skill
+version: v0.1.0
+owner_department: 国家统计局
+status: draft
+description: 把新闻正文提取为结构化事件事实和影响线索。
+input_schema: EventIn
+output_schema: EventNormalized
+chain_types:
+  - intel_update
+tags:
+  - ingestion
+  - intel
+prompt_file: prompt.md

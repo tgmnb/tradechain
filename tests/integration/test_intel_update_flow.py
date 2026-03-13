@@ -1,8 +1,11 @@
 from uuid import uuid4
 
-from fastapi.testclient import TestClient
+import pytest
+
+TestClient = pytest.importorskip("fastapi.testclient").TestClient
 
 from apps.api_service.app.main import app
+
 
 
 def test_healthz() -> None:
@@ -10,6 +13,7 @@ def test_healthz() -> None:
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
 
 
 def test_create_task_requires_api_key() -> None:

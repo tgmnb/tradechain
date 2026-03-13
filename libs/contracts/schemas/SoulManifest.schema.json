@@ -1,0 +1,147 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "soul_id": {
+      "pattern": "^[a-z0-9_]+$",
+      "title": "Soul Id",
+      "type": "string"
+    },
+    "soul_type": {
+      "enum": [
+        "department",
+        "specialist"
+      ],
+      "title": "Soul Type",
+      "type": "string"
+    },
+    "version": {
+      "default": "v0.1.0",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "department_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9_]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Department Id"
+    },
+    "department_name": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Department Name"
+    },
+    "mission": {
+      "minLength": 1,
+      "title": "Mission",
+      "type": "string"
+    },
+    "responsibilities": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Responsibilities",
+      "type": "array"
+    },
+    "focus": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Focus",
+      "type": "array"
+    },
+    "guardrails": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Guardrails",
+      "type": "array"
+    },
+    "style_notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Style Notes",
+      "type": "array"
+    },
+    "tone": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Tone",
+      "type": "string"
+    },
+    "default_specialist": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9_]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Default Specialist"
+    },
+    "default_skills": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Default Skills",
+      "type": "array"
+    },
+    "additional_skills": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Additional Skills",
+      "type": "array"
+    },
+    "chain_bindings": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "title": "Chain Bindings",
+      "type": "object"
+    },
+    "status": {
+      "default": "draft",
+      "maxLength": 30,
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "soul_id",
+    "soul_type",
+    "name",
+    "mission"
+  ],
+  "title": "SoulManifest",
+  "type": "object"
+}

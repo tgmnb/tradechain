@@ -1,0 +1,14 @@
+skill_name: plan_generation_skill
+version: v0.1.0
+owner_department: 中央军委
+status: draft
+description: 把策略草案转成盘前计划和监控清单。
+input_schema: Strategy
+output_schema: TradingPlan
+chain_types:
+  - daily_preopen
+  - major_task
+tags:
+  - planning
+  - execution
+prompt_file: prompt.md

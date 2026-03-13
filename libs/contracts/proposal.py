@@ -13,6 +13,8 @@ SCHEMA_VERSION = "1.0.0"
 class ProposalDraftRequest(ContractModel):
     event_id: UUID
     task_id: UUID | None = None
+    department_id: str | None = None
+    specialist_id: str | None = None
 
 
 class ProposalDraft(ContractModel):

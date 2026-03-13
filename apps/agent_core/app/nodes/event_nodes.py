@@ -5,6 +5,7 @@ from uuid import uuid4
 from apps.agent_core.app.llm import get_proposal_generator
 
 
+
 def parse_event_node(state: dict[str, Any]) -> dict[str, Any]:
     event = state.get("event", {})
     parsed = {
@@ -24,12 +25,18 @@ def parse_event_node(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+
 def draft_proposal_node(state: dict[str, Any]) -> dict[str, Any]:
     parsed = state.get("parsed_event", {})
+    profile = state.get("resolved_profile") or {}
     generator = get_proposal_generator()
     try:
         proposal = generator.generate(parsed_event=parsed, state=state)
-        message = {"node": "draft_proposal", "ok": True, "provider": proposal.get("metadata", {}).get("llm_provider", "unknown")}
+        message = {
+            "node": "draft_proposal",
+            "ok": True,
+            "provider": proposal.get("metadata", {}).get("llm_provider", "unknown"),
+        }
     except Exception as exc:  # noqa: BLE001
         fallback = {
             "id": str(uuid4()),
@@ -50,6 +57,9 @@ def draft_proposal_node(state: dict[str, Any]) -> dict[str, Any]:
                 "generated_at": datetime.now(timezone.utc).isoformat(),
                 "llm_provider": "fallback",
                 "fallback_reason": str(exc),
+                "department_id": profile.get("department_id"),
+                "specialist_id": profile.get("specialist_id"),
+                "active_skills": profile.get("skill_names", []),
                 "schema_version": "1.0.0",
             },
         }
@@ -64,6 +74,7 @@ def draft_proposal_node(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+
 def validate_proposal_node(state: dict[str, Any]) -> dict[str, Any]:
     proposal = state.get("proposal", {})
     confidence = float(proposal.get("confidence", 0.5))
@@ -72,6 +83,11 @@ def validate_proposal_node(state: dict[str, Any]) -> dict[str, Any]:
     proposal["requires_human"] = requires_human
     proposal["status"] = "pending_review" if requires_human else "draft"
     proposal["recommended_action"] = "manual_review" if requires_human else "continue_pipeline"
+    proposal.setdefault("metadata", {})
+    profile = state.get("resolved_profile") or {}
+    proposal["metadata"].setdefault("department_id", profile.get("department_id"))
+    proposal["metadata"].setdefault("specialist_id", profile.get("specialist_id"))
+    proposal["metadata"].setdefault("active_skills", profile.get("skill_names", []))
 
     return {
         **state,

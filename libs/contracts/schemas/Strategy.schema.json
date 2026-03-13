@@ -1,0 +1,121 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "proposal_id": {
+      "format": "uuid",
+      "title": "Proposal Id",
+      "type": "string"
+    },
+    "research_report_id": {
+      "format": "uuid",
+      "title": "Research Report Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "thesis": {
+      "title": "Thesis",
+      "type": "string"
+    },
+    "target_assets": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Target Assets",
+      "type": "array"
+    },
+    "setup_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Setup Conditions",
+      "type": "array"
+    },
+    "invalidation_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Invalidation Conditions",
+      "type": "array"
+    },
+    "risk_controls": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Risk Controls",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 0.5,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "priority_score": {
+      "default": 50.0,
+      "maximum": 100.0,
+      "minimum": 0.0,
+      "title": "Priority Score",
+      "type": "number"
+    },
+    "status": {
+      "default": "draft",
+      "maxLength": 30,
+      "title": "Status",
+      "type": "string"
+    },
+    "metadata": {
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "proposal_id",
+    "research_report_id",
+    "title",
+    "thesis",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Strategy",
+  "type": "object"
+}

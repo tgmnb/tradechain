@@ -1,12 +1,21 @@
 import json
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from libs.contracts.archive import ArchiveCreate, ArchiveRef
 from libs.contracts.event import EventIn, EventNormalized
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse
 from libs.contracts.proposal import ProposalDraft, ProposalDraftRequest, ProposalFinal
+from libs.contracts.registry import ResolvedAgentProfile, SkillManifest, SoulManifest
+from libs.contracts.research import ResearchReport, ResearchReportDraftRequest
 from libs.contracts.review import ReviewRecord
+from libs.contracts.strategy import Strategy, StrategyDraftRequest
 from libs.contracts.task import TaskCreate, TaskRead
+from libs.contracts.trading import ExecutionRecord, TradingPlan, TradingPlanDraftRequest
 
 MODELS = {
     "TaskCreate": TaskCreate,
@@ -21,11 +30,22 @@ MODELS = {
     "ArchiveRef": ArchiveRef,
     "GraphRunRequest": GraphRunRequest,
     "GraphRunResponse": GraphRunResponse,
+    "SoulManifest": SoulManifest,
+    "SkillManifest": SkillManifest,
+    "ResolvedAgentProfile": ResolvedAgentProfile,
+    "ResearchReportDraftRequest": ResearchReportDraftRequest,
+    "ResearchReport": ResearchReport,
+    "StrategyDraftRequest": StrategyDraftRequest,
+    "Strategy": Strategy,
+    "TradingPlanDraftRequest": TradingPlanDraftRequest,
+    "TradingPlan": TradingPlan,
+    "ExecutionRecord": ExecutionRecord,
 }
 
 
+
 def main() -> None:
-    out_dir = Path("libs/contracts/schemas")
+    out_dir = ROOT / "libs" / "contracts" / "schemas"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for name, model in MODELS.items():

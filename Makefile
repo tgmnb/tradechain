@@ -1,4 +1,4 @@
-.PHONY: up down logs migrate seed schemas
+.PHONY: up down logs migrate seed schemas registry-sync
 
 up:
 	docker compose up --build
@@ -17,3 +17,6 @@ seed:
 
 schemas:
 	PYTHONPATH=. python scripts/export_contract_schemas.py
+
+registry-sync:
+	PYTHONPATH=. python scripts/sync_registry_to_db.py

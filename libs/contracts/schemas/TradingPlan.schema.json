@@ -1,0 +1,107 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "strategy_id": {
+      "format": "uuid",
+      "title": "Strategy Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "plan_date": {
+      "format": "date",
+      "title": "Plan Date",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "objective": {
+      "title": "Objective",
+      "type": "string"
+    },
+    "entry_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Entry Conditions",
+      "type": "array"
+    },
+    "exit_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Exit Conditions",
+      "type": "array"
+    },
+    "monitoring_points": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Monitoring Points",
+      "type": "array"
+    },
+    "checklist": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Checklist",
+      "type": "array"
+    },
+    "status": {
+      "default": "draft",
+      "maxLength": 30,
+      "title": "Status",
+      "type": "string"
+    },
+    "metadata": {
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "strategy_id",
+    "plan_date",
+    "title",
+    "objective",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "TradingPlan",
+  "type": "object"
+}

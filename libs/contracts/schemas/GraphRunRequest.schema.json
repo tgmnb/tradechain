@@ -25,6 +25,30 @@
       "default": null,
       "title": "Proposal"
     },
+    "research_report": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Research Report"
+    },
+    "strategy": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Strategy"
+    },
     "task_id": {
       "anyOf": [
         {

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     internal_service_api_key: str = Field(default="internal-dev-key")
     archive_service_url: str = Field(default="http://archive-service:8003")
-    llm_provider: str = Field(default="heuristic")
+    llm_provider: str = Field(default="minimax")
     llm_base_url: str = Field(default="https://api.minimaxi.com/v1")
     llm_api_key: str = Field(default="")
     llm_model: str = Field(default="MiniMax-M2.5")

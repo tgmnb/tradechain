@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import date
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
@@ -8,8 +8,17 @@ from sqlalchemy.orm import Session
 from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import get_db
 from apps.api_service.app.services.internal_clients import internal_clients
-from libs.contracts.event import EventIn, EventNormalized, build_event_dedup_key
-from libs.db.models import EventModel
+from apps.api_service.app.services.runtime_objects import (
+    event_model_to_payload,
+    persist_proposal,
+    persist_research_report,
+    persist_strategy,
+    persist_trading_plan,
+    proposal_model_to_payload,
+)
+from apps.api_service.app.services.runtime_profiles import planning_profile_for, proposal_profile_for
+from libs.contracts.event import EventIn, build_event_dedup_key
+from libs.db.models import EventModel, ProposalModel, TaskModel
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"], dependencies=[Depends(require_api_key)])
 
@@ -45,33 +54,20 @@ async def run_intel_update(request: Request, db: Session = Depends(get_db)) -> d
 
         graph_result = await internal_clients.run_event_to_proposal_graph(
             request=request,
-            event=_event_to_payload(event),
+            event=event_model_to_payload(event),
             task_id=None,
-            metadata={"source": "workflow_intel_update"},
+            metadata={
+                **proposal_profile_for("intel_update"),
+                "source": "workflow_intel_update",
+            },
+            chain_type="intel_update",
         )
 
         proposal_data = graph_result.get("proposal")
-        if proposal_data:
-            from libs.db.models import ProposalModel
-            from uuid import UUID
-
-            existing_proposal = db.get(ProposalModel, UUID(proposal_data["id"]))
-            if not existing_proposal:
-                proposal = ProposalModel(
-                    id=UUID(proposal_data["id"]),
-                    source_event_id=event.id,
-                    theme=proposal_data["theme"],
-                    asset_scope={"assets": proposal_data.get("asset_scope", [])},
-                    initial_logic=proposal_data["initial_logic"],
-                    trigger_conditions={"items": proposal_data.get("trigger_conditions", [])},
-                    invalidation_conditions={"items": proposal_data.get("invalidation_conditions", [])},
-                    risks={"items": proposal_data.get("risks", [])},
-                    status=proposal_data.get("status", "draft"),
-                    rank_score=proposal_data.get("confidence", 0.5) * 100,
-                    metadata_json=proposal_data.get("metadata", {}),
-                )
-                db.add(proposal)
-                created_proposals += 1
+        proposal_id = UUID(str(proposal_data["id"])) if proposal_data else None
+        if proposal_data and proposal_id and not db.get(ProposalModel, proposal_id):
+            persist_proposal(db, proposal_data, source_event_id=event.id)
+            created_proposals += 1
 
     db.commit()
     return {
@@ -83,43 +79,157 @@ async def run_intel_update(request: Request, db: Session = Depends(get_db)) -> d
 
 
 @router.post("/major-task/run")
-async def run_major_task_placeholder() -> dict:
-    return {"status": "placeholder", "message": "major-task workflow reserved for Sprint 3+"}
+async def run_major_task(request: Request, db: Session = Depends(get_db)) -> dict:
+    task = db.scalar(select(TaskModel).where(TaskModel.chain_type == "major_task").order_by(TaskModel.created_at.desc()))
+    if not task:
+        return {
+            "status": "blocked",
+            "reason": "no_major_task",
+            "message": "Create a major_task first before running this workflow.",
+        }
+
+    proposal = db.scalar(select(ProposalModel).where(ProposalModel.task_id == task.id).order_by(ProposalModel.created_at.desc()))
+    if not proposal:
+        event = db.scalar(select(EventModel).order_by(EventModel.created_at.desc()))
+        if not event:
+            return {
+                "status": "blocked",
+                "reason": "no_event_context",
+                "message": "No event is available to draft a proposal for the latest major task.",
+            }
+
+        proposal_result = await internal_clients.run_event_to_proposal_graph(
+            request=request,
+            event=event_model_to_payload(event),
+            task_id=str(task.id),
+            metadata={
+                **proposal_profile_for("major_task"),
+                "source": "workflow_major_task",
+            },
+            chain_type="major_task",
+        )
+        proposal_data = proposal_result.get("proposal")
+        if not proposal_data:
+            return {
+                "status": "failed",
+                "reason": "proposal_generation_failed",
+                "message": "agent-core did not return a proposal for the latest major task.",
+            }
+        proposal = persist_proposal(db, proposal_data, task_id=task.id, source_event_id=event.id)
+        db.flush()
+
+    plan_result = await internal_clients.run_proposal_to_plan_graph(
+        request=request,
+        proposal=proposal_model_to_payload(proposal),
+        task_id=str(task.id),
+        metadata={
+            **planning_profile_for("major_task"),
+            "stop_after": "trading_plan",
+            "plan_date": date.today().isoformat(),
+        },
+        chain_type="major_task",
+    )
+
+    report_data = plan_result.get("research_report")
+    strategy_data = plan_result.get("strategy")
+    plan_data = plan_result.get("trading_plan")
+    if not (report_data and strategy_data and plan_data):
+        return {
+            "status": "failed",
+            "reason": "planning_pipeline_failed",
+            "message": "agent-core did not return the full research -> strategy -> plan chain.",
+        }
+
+    report = persist_research_report(db, report_data)
+    strategy = persist_strategy(db, strategy_data)
+    plan = persist_trading_plan(db, plan_data)
+    db.commit()
+    db.refresh(report)
+    db.refresh(strategy)
+    db.refresh(plan)
+
+    return {
+        "status": "success",
+        "task_id": str(task.id),
+        "proposal_id": str(proposal.id),
+        "research_report_id": str(report.id),
+        "strategy_id": str(strategy.id),
+        "trading_plan_id": str(plan.id),
+    }
 
 
 @router.post("/daily-preopen/run")
-async def run_daily_preopen_placeholder() -> dict:
-    return {"status": "placeholder", "message": "daily-preopen workflow reserved for Sprint 3+"}
+async def run_daily_preopen(request: Request, db: Session = Depends(get_db)) -> dict:
+    proposal = db.scalar(select(ProposalModel).order_by(ProposalModel.created_at.desc()))
+    if not proposal:
+        return {
+            "status": "blocked",
+            "reason": "no_proposal",
+            "message": "Run intel-update or draft a proposal before daily-preopen.",
+        }
+
+    plan_result = await internal_clients.run_proposal_to_plan_graph(
+        request=request,
+        proposal=proposal_model_to_payload(proposal),
+        task_id=str(proposal.task_id) if proposal.task_id else None,
+        metadata={
+            **planning_profile_for("daily_preopen"),
+            "stop_after": "trading_plan",
+            "plan_date": date.today().isoformat(),
+        },
+        chain_type="daily_preopen",
+    )
+
+    report_data = plan_result.get("research_report")
+    strategy_data = plan_result.get("strategy")
+    plan_data = plan_result.get("trading_plan")
+    if not (report_data and strategy_data and plan_data):
+        return {
+            "status": "failed",
+            "reason": "planning_pipeline_failed",
+            "message": "agent-core did not return the full daily-preopen planning chain.",
+        }
+
+    report = persist_research_report(db, report_data)
+    strategy = persist_strategy(db, strategy_data)
+    plan = persist_trading_plan(db, plan_data)
+    db.commit()
+    db.refresh(report)
+    db.refresh(strategy)
+    db.refresh(plan)
+
+    return {
+        "status": "success",
+        "proposal_id": str(proposal.id),
+        "research_report_id": str(report.id),
+        "strategy_id": str(strategy.id),
+        "trading_plan_id": str(plan.id),
+        "plan_date": plan.plan_date.isoformat(),
+    }
 
 
 @router.post("/intraday-watch/run")
 async def run_intraday_watch_placeholder() -> dict:
-    return {"status": "placeholder", "message": "intraday-watch workflow reserved for Sprint 4+"}
+    return {
+        "status": "blocked",
+        "reason": "live_market_data_required",
+        "message": "intraday-watch needs live market data, plan triggers, and deployment-side scheduling.",
+    }
 
 
 @router.post("/postclose-review/run")
 async def run_postclose_review_placeholder() -> dict:
-    return {"status": "placeholder", "message": "postclose-review workflow reserved for Sprint 5+"}
+    return {
+        "status": "blocked",
+        "reason": "execution_records_required",
+        "message": "postclose-review needs execution records and plan-vs-action comparison before it can run.",
+    }
 
 
 @router.post("/nightly-improvement/run")
 async def run_nightly_improvement_placeholder() -> dict:
-    return {"status": "placeholder", "message": "nightly-improvement workflow reserved for Sprint 6+"}
-
-
-def _event_to_payload(event: EventModel) -> dict:
-    confidence = float(event.confidence) if isinstance(event.confidence, Decimal) else float(event.confidence or 0.5)
-    return EventNormalized(
-        id=event.id,
-        source=event.source,
-        event_type=event.event_type,
-        title=event.title or "",
-        content=event.content or "",
-        asset_scope=(event.asset_scope or {}).get("assets", []),
-        impact_direction=event.impact_direction or "neutral",
-        confidence=confidence,
-        raw_payload=event.raw_payload or {},
-        occurred_at=event.occurred_at,
-        dedup_key=event.dedup_key,
-        created_at=event.created_at or datetime.now(timezone.utc),
-    ).model_dump(mode="json")
+    return {
+        "status": "blocked",
+        "reason": "evaluation_pipeline_required",
+        "message": "nightly-improvement needs evaluation signals, scores, and approval workflow before it can run.",
+    }
