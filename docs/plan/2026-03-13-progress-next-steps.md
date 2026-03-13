@@ -51,3 +51,23 @@
 - 用 Discord 验证 slash command 联通和频道限制
 - 决定 `intraday_watch` 的实时数据接入方式
 - 决定 execution record 的采集入口，为 `postclose_review` 铺路
+
+## 2026-03-14 本地联调补充
+
+这轮又补了几项“真正能跑”的东西，重点不是新框架，而是把现有链路在当前机器上打通：
+
+- 新增一键脚本：`scripts/install_local.sh`、`scripts/start_local.sh`
+- `start_local.sh` 会自动起 compose、跑迁移、在配置了 token 时拉起 Discord bot，并执行最小 smoke check
+- Discord bot 不再只有 slash command，普通频道消息也会进顶层 politburo agent
+- 顶层 politburo agent 现在有两类稳定行为：
+  - 直接回复：`help`、`你是谁`、`你能做什么`、健康查询、最新提案查询
+  - 任务分拣：研究/分析/提案类请求会升级到 `intel_update`
+- `MiniMax` 结构化解析补了 `<think>` 清洗和首个合法 JSON 提取，避免模型前置思考文本把结果打坏
+- API 内部调用超时补成了兼容配置，避免 planning 链在 `daily_preopen` 上提前超时
+
+当前本地可视为已验证的内容：
+
+- `intel_update`
+- `daily_preopen`
+- `politburo direct reply`
+- `Discord plain message -> politburo -> direct reply / intel_update`
