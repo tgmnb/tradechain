@@ -1,3 +1,4 @@
+import os
 from uuid import uuid4
 
 import httpx
@@ -12,10 +13,9 @@ class InternalClients:
         # Planning graphs can span multiple model/archive steps, so a short
         # default request timeout causes the API layer to fail before agent-core
         # has a chance to complete or fallback.
-        timeout_seconds = max(
-            float(self.settings.internal_http_timeout_seconds),
-            float(self.settings.internal_request_timeout_seconds),
-        )
+        timeout_seconds = float(self.settings.internal_request_timeout_seconds)
+        if "INTERNAL_REQUEST_TIMEOUT_SECONDS" not in os.environ:
+            timeout_seconds = float(self.settings.internal_http_timeout_seconds)
         self.timeout = httpx.Timeout(timeout_seconds, connect=10.0)
 
     def headers_from_request(self, request: Request, chain_type: str = "intel_update") -> dict[str, str]:
