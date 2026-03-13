@@ -1,4 +1,189 @@
 {
+  "$defs": {
+    "ResolvedAgentProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "department_id": {
+          "pattern": "^[a-z0-9_]+$",
+          "title": "Department Id",
+          "type": "string"
+        },
+        "department_name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Department Name",
+          "type": "string"
+        },
+        "department_soul_id": {
+          "pattern": "^[a-z0-9_]+$",
+          "title": "Department Soul Id",
+          "type": "string"
+        },
+        "specialist_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9_]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Specialist Id"
+        },
+        "specialist_name": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Specialist Name"
+        },
+        "chain_type": {
+          "maxLength": 50,
+          "minLength": 1,
+          "title": "Chain Type",
+          "type": "string"
+        },
+        "mission": {
+          "minLength": 1,
+          "title": "Mission",
+          "type": "string"
+        },
+        "responsibilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Responsibilities",
+          "type": "array"
+        },
+        "focus": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Focus",
+          "type": "array"
+        },
+        "guardrails": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Guardrails",
+          "type": "array"
+        },
+        "style_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Style Notes",
+          "type": "array"
+        },
+        "tone": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Tone",
+          "type": "string"
+        },
+        "skill_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Skill Names",
+          "type": "array"
+        },
+        "skills": {
+          "items": {
+            "$ref": "#/$defs/ResolvedSkillBinding"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "system_prompt": {
+          "minLength": 1,
+          "title": "System Prompt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "department_id",
+        "department_name",
+        "department_soul_id",
+        "chain_type",
+        "mission",
+        "system_prompt"
+      ],
+      "title": "ResolvedAgentProfile",
+      "type": "object"
+    },
+    "ResolvedSkillBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "skill_name": {
+          "pattern": "^[a-z0-9_]+$",
+          "title": "Skill Name",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 50,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "input_schema": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Input Schema",
+          "type": "string"
+        },
+        "output_schema": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Output Schema",
+          "type": "string"
+        },
+        "prompt_template": {
+          "minLength": 1,
+          "title": "Prompt Template",
+          "type": "string"
+        },
+        "owner_department": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owner Department"
+        }
+      },
+      "required": [
+        "skill_name",
+        "version",
+        "description",
+        "input_schema",
+        "output_schema",
+        "prompt_template"
+      ],
+      "title": "ResolvedSkillBinding",
+      "type": "object"
+    }
+  },
   "additionalProperties": false,
   "properties": {
     "graph_name": {
@@ -26,6 +211,65 @@
       "default": null,
       "title": "Proposal"
     },
+    "research_report": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Research Report"
+    },
+    "strategy": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Strategy"
+    },
+    "trading_plan": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trading Plan"
+    },
+    "execution_record": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Execution Record"
+    },
+    "resolved_profile": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResolvedAgentProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "archive_ref": {
       "anyOf": [
         {
@@ -37,6 +281,13 @@
       ],
       "default": null,
       "title": "Archive Ref"
+    },
+    "archive_refs": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Archive Refs",
+      "type": "array"
     },
     "messages": {
       "items": {

@@ -1,9 +1,16 @@
+import asyncio
 import os
+import socket
 
 import aiohttp
 import discord
 import httpx
 from discord import app_commands
+
+try:
+    from aiohttp_socks import ProxyConnector
+except ImportError:  # pragma: no cover - optional until dependency is installed in runtime image
+    ProxyConnector = None
 
 API_URL = os.getenv("DISCORD_BOT_API_URL", "http://api-service:8000")
 API_KEY = os.getenv("DISCORD_BOT_API_KEY", "external-dev-key")
@@ -13,6 +20,8 @@ CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID", "")
 DISCORD_PROXY_URL = os.getenv("DISCORD_PROXY_URL", "")
 DISCORD_PROXY_USERNAME = os.getenv("DISCORD_PROXY_USERNAME", "")
 DISCORD_PROXY_PASSWORD = os.getenv("DISCORD_PROXY_PASSWORD", "")
+DISCORD_PROXY_FORCE_IPV4 = os.getenv("DISCORD_PROXY_FORCE_IPV4", "true").lower() in {"1", "true", "yes", "on"}
+DISCORD_PROXY_DNS_CACHE_SECONDS = int(os.getenv("DISCORD_PROXY_DNS_CACHE_SECONDS", "300"))
 
 
 def channel_object() -> discord.Object | None:
@@ -29,19 +38,53 @@ def as_embed(title: str, description: str, *, color: int) -> discord.Embed:
     return embed
 
 
+def build_discord_connector(loop: asyncio.AbstractEventLoop) -> aiohttp.BaseConnector | None:
+    family = socket.AF_INET if DISCORD_PROXY_FORCE_IPV4 else socket.AF_UNSPEC
+
+    if not DISCORD_PROXY_URL:
+        return aiohttp.TCPConnector(
+            loop=loop,
+            family=family,
+            ttl_dns_cache=DISCORD_PROXY_DNS_CACHE_SECONDS,
+            enable_cleanup_closed=True,
+            limit=0,
+        )
+
+    if DISCORD_PROXY_URL.startswith(("socks5://", "socks4://")):
+        if ProxyConnector is None:
+            raise RuntimeError("aiohttp-socks is required for SOCKS proxy support")
+        return ProxyConnector.from_url(DISCORD_PROXY_URL, loop=loop)
+
+    if DISCORD_PROXY_URL.startswith(("http://", "https://")):
+        return aiohttp.TCPConnector(
+            loop=loop,
+            family=family,
+            ttl_dns_cache=DISCORD_PROXY_DNS_CACHE_SECONDS,
+            enable_cleanup_closed=True,
+            limit=0,
+        )
+
+    return None
+
+
 class TradechainBot(discord.Client):
-    def __init__(self) -> None:
+    def __init__(self, *, connector: aiohttp.BaseConnector | None) -> None:
         intents = discord.Intents.default()
         intents.guilds = True
-        intents.message_content = True
         intents.messages = True
+        intents.message_content = True
+
         proxy_auth = None
+        proxy_url = None
         if DISCORD_PROXY_USERNAME and DISCORD_PROXY_PASSWORD:
             proxy_auth = aiohttp.BasicAuth(DISCORD_PROXY_USERNAME, DISCORD_PROXY_PASSWORD)
+        if DISCORD_PROXY_URL.startswith(("http://", "https://")):
+            proxy_url = DISCORD_PROXY_URL
 
         super().__init__(
             intents=intents,
-            proxy=DISCORD_PROXY_URL or None,
+            connector=connector,
+            proxy=proxy_url,
             proxy_auth=proxy_auth,
         )
         self.tree = app_commands.CommandTree(self)
@@ -193,7 +236,9 @@ class TradechainBot(discord.Client):
                     await channel.send(
                         embed=as_embed(
                             "Tradechain Bot Online",
-                            "Commands are live for this channel.\nUse `/system_health`, `/proposal_latest`, `/intel_update`, `/task_create`.",
+                            "Commands are live for this channel.\n"
+                            "Use `/system_health`, `/proposal_latest`, `/intel_update`, `/task_create`, `/ask`.\n"
+                            "Plain messages in this channel also route into the top-level agent.",
                             color=0x1F8B4C,
                         )
                     )
@@ -218,6 +263,7 @@ class TradechainBot(discord.Client):
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
+
         channel_id = allowed_channel_id()
         if channel_id and message.channel.id != channel_id:
             return
@@ -330,8 +376,15 @@ def main() -> None:
     if not DISCORD_TOKEN:
         raise SystemExit("DISCORD_BOT_TOKEN is empty. Set it in .env before running discord-bot profile.")
 
-    client = TradechainBot()
-    client.run(DISCORD_TOKEN)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    connector = build_discord_connector(loop)
+    client = TradechainBot(connector=connector)
+    try:
+        loop.run_until_complete(client.start(DISCORD_TOKEN))
+    finally:
+        loop.run_until_complete(client.close())
+        loop.close()
 
 
 if __name__ == "__main__":

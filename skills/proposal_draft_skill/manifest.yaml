@@ -1,0 +1,14 @@
+skill_name: proposal_draft_skill
+version: v0.1.0
+owner_department: 国务院
+status: draft
+description: 把事件转成结构化议案草稿，明确主题、逻辑、触发和风险。
+input_schema: EventNormalized
+output_schema: ProposalFinal
+chain_types:
+  - intel_update
+  - major_task
+tags:
+  - proposal
+  - drafting
+prompt_file: prompt.md

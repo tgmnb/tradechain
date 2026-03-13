@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import Field
 
 from libs.contracts.base import ContractModel
+from libs.contracts.registry import ResolvedAgentProfile
 
 
 class GraphState(ContractModel):
@@ -30,6 +31,8 @@ class GraphState(ContractModel):
 class GraphRunRequest(ContractModel):
     event: dict[str, Any] | None = None
     proposal: dict[str, Any] | None = None
+    research_report: dict[str, Any] | None = None
+    strategy: dict[str, Any] | None = None
     task_id: UUID | None = None
     chain_type: str = "intel_update"
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -40,6 +43,12 @@ class GraphRunResponse(ContractModel):
     status: str
     requires_human: bool = False
     proposal: dict[str, Any] | None = None
+    research_report: dict[str, Any] | None = None
+    strategy: dict[str, Any] | None = None
+    trading_plan: dict[str, Any] | None = None
+    execution_record: dict[str, Any] | None = None
+    resolved_profile: ResolvedAgentProfile | None = None
     archive_ref: dict[str, Any] | None = None
+    archive_refs: list[dict[str, Any]] = Field(default_factory=list)
     messages: list[dict[str, Any]] = Field(default_factory=list)
     finished_at: datetime

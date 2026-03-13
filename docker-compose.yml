@@ -201,6 +201,7 @@ services:
     container_name: tradechain-discord-bot
     restart: unless-stopped
     profiles: ["discord"]
+    network_mode: host
     env_file:
       - .env
     environment:
@@ -215,8 +216,6 @@ services:
       DISCORD_BOT_API_KEY: ${DISCORD_BOT_API_KEY}
     volumes:
       - ./:/workspace
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       - api-service
 

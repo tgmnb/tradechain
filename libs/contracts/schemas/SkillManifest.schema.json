@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "skill_name": {
+      "pattern": "^[a-z0-9_]+$",
+      "title": "Skill Name",
+      "type": "string"
+    },
+    "version": {
+      "default": "v0.1.0",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "owner_department": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner Department"
+    },
+    "status": {
+      "default": "draft",
+      "maxLength": 30,
+      "title": "Status",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "input_schema": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Input Schema",
+      "type": "string"
+    },
+    "output_schema": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Output Schema",
+      "type": "string"
+    },
+    "chain_types": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Chain Types",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "prompt_template": {
+      "minLength": 1,
+      "title": "Prompt Template",
+      "type": "string"
+    }
+  },
+  "required": [
+    "skill_name",
+    "description",
+    "input_schema",
+    "output_schema",
+    "prompt_template"
+  ],
+  "title": "SkillManifest",
+  "type": "object"
+}

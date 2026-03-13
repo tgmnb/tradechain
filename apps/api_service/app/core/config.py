@@ -17,7 +17,11 @@ class Settings(BaseSettings):
     agent_core_service_url: str = Field(default="http://agent-core:8002")
     archive_service_url: str = Field(default="http://archive-service:8003")
     evaluation_service_url: str = Field(default="http://evaluation-service:8004")
-    internal_http_timeout_seconds: float = Field(default=90.0)
+
+    # Keep both names for compatibility with master and codex/0313 code paths.
+    internal_http_timeout_seconds: float = Field(default=120.0)
+    internal_request_timeout_seconds: float = Field(default=120.0)
+
     llm_provider: str = Field(default="heuristic")
     llm_base_url: str = Field(default="https://api.minimaxi.com/v1")
     llm_api_key: str = Field(default="")

@@ -1,0 +1,14 @@
+skill_name: strategy_synthesis_skill
+version: v0.1.0
+owner_department: 中央军委
+status: draft
+description: 把研究摘要整理为可排序的策略草案。
+input_schema: ResearchReport
+output_schema: Strategy
+chain_types:
+  - daily_preopen
+  - major_task
+tags:
+  - strategy
+  - synthesis
+prompt_file: prompt.md

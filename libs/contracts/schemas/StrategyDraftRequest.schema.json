@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "research_report_id": {
+      "format": "uuid",
+      "title": "Research Report Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "department_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Department Id"
+    },
+    "specialist_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Specialist Id"
+    }
+  },
+  "required": [
+    "research_report_id"
+  ],
+  "title": "StrategyDraftRequest",
+  "type": "object"
+}

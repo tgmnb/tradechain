@@ -16,7 +16,27 @@ VALUES
     'v0.1.0',
     '国务院',
     'draft',
-    '{"input_schema": "EventNormalized", "output_schema": "ProposalDraft"}',
+    '{"input_schema": "EventNormalized", "output_schema": "ProposalFinal"}',
+    '{"cases": 0, "pass_rate": 0}',
+    'Initial placeholder skill registration.'
+),
+(
+    '33333333-3333-3333-3333-333333333333',
+    'strategy_synthesis_skill',
+    'v0.1.0',
+    '中央军委',
+    'draft',
+    '{"input_schema": "ResearchReport", "output_schema": "Strategy"}',
+    '{"cases": 0, "pass_rate": 0}',
+    'Initial placeholder skill registration.'
+),
+(
+    '44444444-4444-4444-4444-444444444444',
+    'plan_generation_skill',
+    'v0.1.0',
+    '中央军委',
+    'draft',
+    '{"input_schema": "Strategy", "output_schema": "TradingPlan"}',
     '{"cases": 0, "pass_rate": 0}',
     'Initial placeholder skill registration.'
 )

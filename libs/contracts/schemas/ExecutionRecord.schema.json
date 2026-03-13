@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "trading_plan_id": {
+      "format": "uuid",
+      "title": "Trading Plan Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "action_type": {
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Action Type",
+      "type": "string"
+    },
+    "recorded_by": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Recorded By",
+      "type": "string"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "result": {
+      "title": "Result",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "trading_plan_id",
+    "action_type",
+    "recorded_by",
+    "created_at"
+  ],
+  "title": "ExecutionRecord",
+  "type": "object"
+}
