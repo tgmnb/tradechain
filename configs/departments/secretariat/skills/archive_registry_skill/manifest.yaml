@@ -1,0 +1,16 @@
+skill_name: archive_registry_skill
+version: v0.1.0
+owner_department: 中央书记处
+status: draft
+description: 为对象建立统一编号、归档索引和引用关系，支持审计与检索。
+input_schema: ArchiveRegistryInput
+output_schema: ArchiveRegistryRecord
+chain_types:
+  - major_task
+  - intel_update
+  - daily_preopen
+tags:
+  - archive
+  - registry
+  - audit
+prompt_file: prompt.md

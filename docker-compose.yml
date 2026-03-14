@@ -74,28 +74,29 @@ services:
       dockerfile: apps/api_service/Dockerfile
     container_name: tradechain-api-service
     restart: unless-stopped
+    network_mode: host
     env_file:
       - .env
     environment:
       PYTHONPATH: /workspace
       SERVICE_NAME: api-service
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql+psycopg://tradechain:tradechain@127.0.0.1:5432/tradechain
       INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
       API_SERVICE_API_KEY: ${API_SERVICE_API_KEY}
-      INGESTION_SERVICE_URL: ${INGESTION_SERVICE_URL}
-      AGENT_CORE_SERVICE_URL: ${AGENT_CORE_SERVICE_URL}
-      ARCHIVE_SERVICE_URL: ${ARCHIVE_SERVICE_URL}
-      EVALUATION_SERVICE_URL: ${EVALUATION_SERVICE_URL}
+      INGESTION_SERVICE_URL: http://127.0.0.1:8001
+      AGENT_CORE_SERVICE_URL: http://127.0.0.1:8002
+      ARCHIVE_SERVICE_URL: http://127.0.0.1:8003
+      EVALUATION_SERVICE_URL: http://127.0.0.1:8004
       LLM_PROVIDER: ${LLM_PROVIDER}
       LLM_BASE_URL: ${LLM_BASE_URL}
       LLM_API_KEY: ${LLM_API_KEY}
       LLM_MODEL: ${LLM_MODEL}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS}
       LLM_PROXY_URL: ${LLM_PROXY_URL}
+      WEB_PROXY_URL: http://127.0.0.1:7890
+      WEB_SEARCH_BASE_URL: https://www.bing.com/search
     volumes:
       - ./:/workspace
-    ports:
-      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy

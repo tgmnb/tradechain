@@ -1,0 +1,22 @@
+skill_name: government_policy_crawl_skill
+version: v0.1.0
+owner_department: national_statistics_bureau
+status: draft
+skill_type: functional
+description: Crawl official policy pages for the top 10 economies, filter recent policy and guidance documents, and persist organized local snapshots.
+input_schema: policy_crawl_request
+output_schema: policy_crawl_result
+chain_types:
+  - intel_update
+  - policy_watch
+tags:
+  - crawler
+  - government
+  - policy
+  - filesystem
+runtime:
+  runtime_kind: local_python
+  entrypoint: apps.api_service.app.services.policy_crawl_service:run_policy_crawl
+  sources_file: configs/policy_sources/top10_government_sites.yaml
+  output_dir: data/policy_watch
+prompt_file: prompt.md

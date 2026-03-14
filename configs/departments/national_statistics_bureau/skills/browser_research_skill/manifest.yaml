@@ -1,0 +1,27 @@
+skill_name: browser_research_skill
+version: v0.1.0
+owner_department: national_statistics_bureau
+status: draft
+skill_type: functional
+description: Use a controlled browser or HTTP fetch runtime to open government pages, inspect document links, and capture structured policy evidence.
+input_schema: browser_research_request
+output_schema: browser_research_result
+chain_types:
+  - intel_update
+  - policy_watch
+tags:
+  - browser
+  - web
+  - research
+runtime:
+  runtime_kind: browser_adapter
+  adapter: agent_browser
+  mode: optional
+  allow_domains:
+    - .gov
+    - .gov.cn
+    - europa.eu
+    - gov.uk
+    - gc.ca
+    - gov.br
+prompt_file: prompt.md

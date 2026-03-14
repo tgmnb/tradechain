@@ -9,6 +9,8 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+mkdir -p data/policy_watch
+
 if [[ "${TRADECHAIN_BUILD:-0}" == "1" ]]; then
   docker compose up -d --build
 else
@@ -74,6 +76,30 @@ request = urllib.request.Request(
 )
 response = urllib.request.urlopen(request, timeout=180)
 print("research-route", response.status, response.read().decode())
+PY
+
+echo "[smoke] politburo web research routing"
+docker exec tradechain-api-service python -u - <<'PY'
+import json
+import urllib.request
+
+body = json.dumps(
+    {
+        "text": "帮我查一下日本央行最新政策",
+        "user_name": "bootstrap",
+        "user_id": "bootstrap",
+        "channel_id": "bootstrap",
+        "guild_id": "bootstrap",
+    }
+).encode()
+request = urllib.request.Request(
+    "http://127.0.0.1:8000/v1/agent/discord-message",
+    data=body,
+    method="POST",
+    headers={"Content-Type": "application/json", "X-API-Key": "external-dev-key"},
+)
+response = urllib.request.urlopen(request, timeout=180)
+print("web-research-route", response.status, response.read().decode())
 PY
 
 echo "Tradechain services are up."

@@ -9,6 +9,8 @@ if [[ ! -f .env ]]; then
   echo "Created .env from .env.example"
 fi
 
+mkdir -p data/policy_watch
+
 if [[ ! -x .venv/bin/python ]]; then
   python3 -m venv .venv
 fi

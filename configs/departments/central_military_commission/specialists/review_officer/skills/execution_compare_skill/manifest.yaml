@@ -1,0 +1,14 @@
+skill_name: execution_compare_skill
+version: v0.1.0
+owner_department: 中央军委
+status: draft
+description: 对比交易计划与实际执行记录，生成盘后复盘所需的偏差分析输入。
+input_schema: ExecutionReviewInput
+output_schema: ReviewRecord
+chain_types:
+  - postclose_review
+tags:
+  - review
+  - execution
+  - comparison
+prompt_file: prompt.md

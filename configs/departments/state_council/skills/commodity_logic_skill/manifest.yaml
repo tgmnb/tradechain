@@ -1,0 +1,15 @@
+skill_name: commodity_logic_skill
+version: v0.1.0
+owner_department: 国务院
+status: draft
+description: 整理商品供需、天气、库存与产业链逻辑，形成可研究的基础框架。
+input_schema: CommodityResearchInput
+output_schema: CommodityLogicNote
+chain_types:
+  - major_task
+  - intel_update
+tags:
+  - commodity
+  - supply_demand
+  - research
+prompt_file: prompt.md

@@ -1,26 +1,47 @@
 from datetime import date
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import get_db
 from apps.api_service.app.services.internal_clients import internal_clients
+from apps.api_service.app.services.policy_crawl_service import run_policy_crawl
+from apps.api_service.app.services.web_research_service import run_web_research
 from apps.api_service.app.services.runtime_objects import (
+    execution_record_model_to_payload,
     event_model_to_payload,
     persist_proposal,
     persist_research_report,
+    persist_review_record,
     persist_strategy,
     persist_trading_plan,
     proposal_model_to_payload,
+    trading_plan_model_to_payload,
 )
 from apps.api_service.app.services.runtime_profiles import planning_profile_for, proposal_profile_for
+from libs.contracts.enums import TaskStatus
 from libs.contracts.event import EventIn, build_event_dedup_key
-from libs.db.models import EventModel, ProposalModel, TaskModel
+from libs.db.models import EventModel, ExecutionRecordModel, ProposalModel, ReviewModel, TaskModel, TradingPlanModel
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"], dependencies=[Depends(require_api_key)])
+
+
+class PolicyCrawlRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    limit_per_source: int = Field(default=5, ge=1, le=20)
+    source_ids: list[str] = Field(default_factory=list)
+
+
+class WebResearchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1, max_length=500)
+    max_results: int = Field(default=5, ge=1, le=10)
 
 
 @router.post("/intel-update/run")
@@ -78,6 +99,28 @@ async def run_intel_update(request: Request, db: Session = Depends(get_db)) -> d
     }
 
 
+@router.post("/policy-crawl/run")
+async def run_policy_crawl_workflow(payload: PolicyCrawlRequest | None = None) -> dict:
+    request_payload = payload or PolicyCrawlRequest()
+    result = run_policy_crawl(
+        limit_per_source=request_payload.limit_per_source,
+        source_ids=request_payload.source_ids,
+    )
+    return {
+        "status": result["status"],
+        "run_id": result["run_id"],
+        "source_count": result["source_count"],
+        "document_count": result["document_count"],
+        "output_dir": result["output_dir"],
+        "sources": result["sources"],
+    }
+
+
+@router.post("/web-research/run")
+async def run_web_research_workflow(payload: WebResearchRequest) -> dict:
+    return run_web_research(query=payload.query, max_results=payload.max_results)
+
+
 @router.post("/major-task/run")
 async def run_major_task(request: Request, db: Session = Depends(get_db)) -> dict:
     task = db.scalar(select(TaskModel).where(TaskModel.chain_type == "major_task").order_by(TaskModel.created_at.desc()))
@@ -87,6 +130,64 @@ async def run_major_task(request: Request, db: Session = Depends(get_db)) -> dic
             "reason": "no_major_task",
             "message": "Create a major_task first before running this workflow.",
         }
+
+    master_result = await internal_clients.run_master_graph(
+        request=request,
+        chain_type="major_task",
+        task={
+            "id": str(task.id),
+            "title": task.title,
+            "type": task.type,
+            "chain_type": task.chain_type,
+            "priority": task.priority,
+            "goal_json": task.goal_json or {},
+            "context_json": task.context_json or {},
+        },
+        metadata={"stage": "task_intake"},
+    )
+    task.context_json = {
+        **(task.context_json or {}),
+        "governance": {
+            "master_graph": master_result,
+        },
+    }
+    goal_review = master_result.get("goal_review") or {}
+    existing_review = db.scalar(
+        select(ReviewModel)
+        .where(ReviewModel.object_type == "task")
+        .where(ReviewModel.object_id == task.id)
+        .where(ReviewModel.reviewer_name == "review_clerk")
+        .order_by(ReviewModel.created_at.desc())
+    )
+    persist_review_record(
+        db,
+        {
+            "id": str(existing_review.id) if existing_review else str(uuid4()),
+            "object_type": "task",
+            "object_id": str(task.id),
+            "reviewer_type": "agent",
+            "reviewer_name": "review_clerk",
+            "decision": goal_review.get("decision", "reject"),
+            "comments": goal_review.get("reason", ""),
+        },
+    )
+
+    if master_result.get("requires_human") or (master_result.get("goal_review") or {}).get("decision") == "reject":
+        task.status = TaskStatus.NEEDS_HUMAN
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        return {
+            "status": "needs_human",
+            "reason": "governance_review_required",
+            "task_id": str(task.id),
+            "master_graph": master_result,
+        }
+
+    task.status = TaskStatus.RUNNING
+    db.add(task)
+    db.commit()
+    db.refresh(task)
 
     proposal = db.scalar(select(ProposalModel).where(ProposalModel.task_id == task.id).order_by(ProposalModel.created_at.desc()))
     if not proposal:
@@ -147,10 +248,12 @@ async def run_major_task(request: Request, db: Session = Depends(get_db)) -> dic
     db.refresh(report)
     db.refresh(strategy)
     db.refresh(plan)
+    db.refresh(task)
 
     return {
         "status": "success",
         "task_id": str(task.id),
+        "master_graph": master_result,
         "proposal_id": str(proposal.id),
         "research_report_id": str(report.id),
         "strategy_id": str(strategy.id),
@@ -213,16 +316,47 @@ async def run_intraday_watch_placeholder() -> dict:
     return {
         "status": "blocked",
         "reason": "live_market_data_required",
-        "message": "intraday-watch needs live market data, plan triggers, and deployment-side scheduling.",
+        "message": "intraday-watch needs live market data, plan triggers, and deployment-side scheduling before runtime alerts can be enabled.",
     }
 
 
 @router.post("/postclose-review/run")
-async def run_postclose_review_placeholder() -> dict:
+async def run_postclose_review(request: Request, db: Session = Depends(get_db)) -> dict:
+    plan = db.scalar(select(TradingPlanModel).order_by(TradingPlanModel.created_at.desc()))
+    if not plan:
+        return {
+            "status": "blocked",
+            "reason": "no_trading_plan",
+            "message": "postclose-review needs at least one trading plan before it can compare execution results.",
+        }
+
+    execution_records = db.scalars(
+        select(ExecutionRecordModel)
+        .where(ExecutionRecordModel.trading_plan_id == plan.id)
+        .order_by(ExecutionRecordModel.created_at.asc())
+    ).all()
+    if not execution_records:
+        return {
+            "status": "blocked",
+            "reason": "execution_records_required",
+            "message": "postclose-review already has execution_compare_skill in registry, but still needs execution records and plan-vs-action comparison inputs before it can run.",
+            "trading_plan_id": str(plan.id),
+        }
+
+    review_result = await internal_clients.run_review_graph(
+        request=request,
+        chain_type="postclose_review",
+        metadata={
+            "trading_plan": trading_plan_model_to_payload(plan),
+            "execution_records": [execution_record_model_to_payload(record) for record in execution_records],
+            "execution_record_count": len(execution_records),
+        },
+    )
     return {
-        "status": "blocked",
-        "reason": "execution_records_required",
-        "message": "postclose-review needs execution records and plan-vs-action comparison before it can run.",
+        "status": "placeholder",
+        "trading_plan_id": str(plan.id),
+        "execution_record_count": len(execution_records),
+        "review_graph": review_result,
     }
 
 
@@ -231,5 +365,5 @@ async def run_nightly_improvement_placeholder() -> dict:
     return {
         "status": "blocked",
         "reason": "evaluation_pipeline_required",
-        "message": "nightly-improvement needs evaluation signals, scores, and approval workflow before it can run.",
+        "message": "nightly-improvement already has improvement_ticket_skill in registry, but still needs evaluation signals, scores, and approval workflow before it can run.",
     }

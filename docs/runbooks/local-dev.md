@@ -23,6 +23,8 @@
 - Health: `curl --noproxy '*' http://127.0.0.1:8000/healthz`
 - Intel loop: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/intel-update/run -H 'X-API-Key: external-dev-key'`
 - Daily preopen chain: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/daily-preopen/run -H 'X-API-Key: external-dev-key'`
+- Web research: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/web-research/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"query":"日本央行最新政策","max_results":5}'`
+- Policy crawl: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/policy-crawl/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"limit_per_source": 5}'`
 - Registry view: `curl --noproxy '*' http://127.0.0.1:8000/v1/registry/souls -H 'X-API-Key: external-dev-key'`
 - Politburo direct reply: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/agent/discord-message -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"text":"你是谁","user_name":"local","user_id":"local","channel_id":"local","guild_id":"local"}'`
 
@@ -31,11 +33,16 @@
 - `LLM_PROVIDER=heuristic` keeps proposal generation local and deterministic.
 - `LLM_PROVIDER=minimax` enables MiniMax proposal generation through `LLM_BASE_URL`.
 - `api-service` uses the same `LLM_*` settings for top-level direct replies from the politburo agent.
+- `api-service` now runs with `network_mode: host` so it can use host-local web proxies and still reach other services through published localhost ports.
 - In the current environment, `agent-core` can reach MiniMax directly, so `LLM_PROXY_URL` should stay empty unless container networking changes.
-- Department souls live in `configs/souls/departments/`
-- Specialist souls live in `configs/souls/specialists/`
-- Skill manifests live in `skills/<skill_name>/manifest.yaml`
-- Skill prompts live in `skills/<skill_name>/prompt.md`
+- Web search and policy crawl use `WEB_PROXY_URL`, which should stay as `http://127.0.0.1:7890` when host-side Clash HTTP proxy is available.
+- Department folders live in `configs/departments/<department_id>/`
+- Department soul lives in `configs/departments/<department_id>/soul.yaml`
+- Department skills live in `configs/departments/<department_id>/skills/<skill_name>/`
+- Specialist folders live in `configs/departments/<department_id>/specialists/<specialist_id>/`
+- Specialist soul lives in `configs/departments/<department_id>/specialists/<specialist_id>/soul.yaml`
+- Specialist skills live in `configs/departments/<department_id>/specialists/<specialist_id>/skills/<skill_name>/`
+- Functional skills can declare `skill_type: functional` plus a `runtime:` block in `manifest.yaml`
 - After editing manifests, rerun `PYTHONPATH=. python scripts/sync_registry_to_db.py` if you want the DB mirror updated
 
 ## Provider Notes
@@ -71,4 +78,6 @@ Recommended:
 - Plain channel messages now go through the top-level politburo agent:
   - simple chat/help queries are answered directly
   - health/proposal queries are served directly
-  - research/analysis requests escalate into the downstream `intel_update` chain
+  - research/search requests first escalate into the downstream `web_research` chain, which currently uses Bing RSS results plus page fetch summarization
+  - explicit intel-update style requests still escalate into the `intel_update` chain
+  - scheduled government policy intake belongs to `policy_watch`, not direct chat

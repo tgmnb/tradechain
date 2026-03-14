@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
@@ -13,12 +13,14 @@ class SkillManifest(ContractModel):
     version: str = Field(default="v0.1.0", min_length=1, max_length=50)
     owner_department: str | None = Field(default=None, max_length=100)
     status: str = Field(default="draft", max_length=30)
+    skill_type: Literal["prompt", "functional"] = Field(default="prompt")
     description: str = Field(min_length=1, max_length=500)
     input_schema: str = Field(min_length=1, max_length=100)
     output_schema: str = Field(min_length=1, max_length=100)
     chain_types: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     prompt_template: str = Field(min_length=1)
+    runtime: dict[str, Any] = Field(default_factory=dict)
 
 
 class SoulManifest(ContractModel):
@@ -61,11 +63,13 @@ class SoulManifest(ContractModel):
 class ResolvedSkillBinding(ContractModel):
     skill_name: str = Field(pattern=_SLUG_PATTERN)
     version: str = Field(min_length=1, max_length=50)
+    skill_type: Literal["prompt", "functional"] = Field(default="prompt")
     description: str = Field(min_length=1, max_length=500)
     input_schema: str = Field(min_length=1, max_length=100)
     output_schema: str = Field(min_length=1, max_length=100)
     prompt_template: str = Field(min_length=1)
     owner_department: str | None = Field(default=None, max_length=100)
+    runtime: dict[str, Any] = Field(default_factory=dict)
 
 
 class ResolvedAgentProfile(ContractModel):

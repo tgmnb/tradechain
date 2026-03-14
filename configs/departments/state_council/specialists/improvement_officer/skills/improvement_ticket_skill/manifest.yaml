@@ -1,0 +1,14 @@
+skill_name: improvement_ticket_skill
+version: v0.1.0
+owner_department: 国务院
+status: draft
+description: 从失败案例、评分与复盘结论中提取结构化改进工单。
+input_schema: ImprovementAnalysisInput
+output_schema: ImprovementTicketDraft
+chain_types:
+  - nightly_improvement
+tags:
+  - improvement
+  - evaluation
+  - governance
+prompt_file: prompt.md

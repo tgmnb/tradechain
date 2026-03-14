@@ -7,10 +7,16 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from apps.api_service.app.agent import dispatch_discord_message
+from apps.api_service.app.agent import dispatch_discord_message, dispatch_gateway_command
 from apps.api_service.app.api.proposals import get_latest_proposal
 from apps.api_service.app.api.tasks import create_task
-from apps.api_service.app.api.workflows import run_intel_update
+from apps.api_service.app.api.workflows import (
+    PolicyCrawlRequest,
+    WebResearchRequest,
+    run_intel_update,
+    run_policy_crawl_workflow,
+    run_web_research_workflow,
+)
 from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import get_db
 from apps.api_service.app.services.politburo_responder import politburo_responder
@@ -46,19 +52,72 @@ async def handle_discord_message(
     db: Session = Depends(get_db),
 ) -> DiscordMessageResponse:
     text = payload.text.strip()
-    decision = dispatch_discord_message(text)
+    gateway = dispatch_gateway_command(text)
+    decision = dispatch_discord_message(text) if not gateway.handled else None
 
-    if decision.route == "help":
+    if gateway.handled and gateway.route == "help":
+        return DiscordMessageResponse(
+            route=gateway.route,
+            summary=await politburo_responder.reply(
+                route=gateway.route,
+                user_text=text,
+                context={
+                    "capabilities": [
+                        "health",
+                        "proposal_latest",
+                        "web_research",
+                        "policy_watch",
+                        "analysis",
+                        "proposal_generation",
+                    ],
+                    "entry_layer": "gateway",
+                },
+            ),
+        )
+
+    if gateway.handled and gateway.route == "health":
+        return DiscordMessageResponse(
+            route=gateway.route,
+            summary=await politburo_responder.reply(
+                route=gateway.route,
+                user_text=text,
+                context={"status": "ok", "entry_layer": "gateway"},
+            ),
+        )
+
+    if gateway.handled and gateway.route == "proposal_latest":
+        proposal = await get_latest_proposal(db=db)
+        proposal_dict = proposal.model_dump(mode="json")
+        return DiscordMessageResponse(
+            route=gateway.route,
+            summary=await politburo_responder.reply(
+                route=gateway.route,
+                user_text=text,
+                context={**proposal_dict, "entry_layer": "gateway"},
+            ),
+            proposal=proposal_dict,
+        )
+
+    if decision and decision.route == "help":
         return DiscordMessageResponse(
             route=decision.route,
             summary=await politburo_responder.reply(
                 route=decision.route,
                 user_text=text,
-                context={"capabilities": ["health", "proposal_latest", "research", "analysis", "proposal_generation"]},
+                context={
+                    "capabilities": [
+                        "health",
+                        "proposal_latest",
+                        "web_research",
+                        "policy_watch",
+                        "analysis",
+                        "proposal_generation",
+                    ]
+                },
             ),
         )
 
-    if decision.route == "health":
+    if decision and decision.route == "health":
         return DiscordMessageResponse(
             route=decision.route,
             summary=await politburo_responder.reply(
@@ -68,7 +127,7 @@ async def handle_discord_message(
             ),
         )
 
-    if decision.route == "proposal_latest":
+    if decision and decision.route == "proposal_latest":
         proposal = await get_latest_proposal(db=db)
         proposal_dict = proposal.model_dump(mode="json")
         return DiscordMessageResponse(
@@ -81,22 +140,32 @@ async def handle_discord_message(
             proposal=proposal_dict,
         )
 
-    if not decision.activate_chain:
+    if gateway.handled and gateway.route in {"intel_update", "web_research", "policy_watch"}:
+        decision_summary = gateway.summary
+        final_route = gateway.route
+    elif decision and decision.activate_chain:
+        decision_summary = decision.summary
+        final_route = decision.route
+    else:
+        decision_summary = ""
+        final_route = decision.route if decision else gateway.route
+
+    if decision and not decision.activate_chain:
         return DiscordMessageResponse(
             route=decision.route,
             summary=await politburo_responder.reply(
                 route=decision.route,
                 user_text=text,
-                context={"policy": "direct_reply_without_research_workflow"},
+                context={"policy": "direct_reply_without_research_workflow", "entry_layer": "politburo"},
             ),
         )
 
     task = await create_task(
         TaskCreate(
             title=_title_from_text(text),
-            type="intel_update",
+            type=final_route,
             source="discord",
-            chain_type="intel_update",
+            chain_type=final_route,
             priority=50,
             goal_json={"text": text},
             context_json={
@@ -111,15 +180,49 @@ async def handle_discord_message(
         db=db,
     )
 
+    if final_route == "web_research":
+        workflow_result = await run_web_research_workflow(WebResearchRequest(query=text))
+        return DiscordMessageResponse(
+            route=final_route,
+            summary="\n".join(
+                [
+                    decision_summary,
+                    f"Task `{task.id}` created.",
+                    workflow_result.get("summary", ""),
+                ]
+            ).strip(),
+            task=task.model_dump(mode="json"),
+            workflow=workflow_result,
+        )
+
+    if final_route == "policy_watch":
+        workflow_result = await run_policy_crawl_workflow(PolicyCrawlRequest())
+        return DiscordMessageResponse(
+            route=final_route,
+            summary="\n".join(
+                [
+                    decision_summary,
+                    f"Task `{task.id}` created.",
+                    (
+                        f"已执行政策抓取，共处理 `{workflow_result.get('source_count')}` 个来源，"
+                        f"整理出 `{workflow_result.get('document_count')}` 条候选政策线索。"
+                    ),
+                    f"输出目录：`{workflow_result.get('output_dir')}`",
+                ]
+            ),
+            task=task.model_dump(mode="json"),
+            workflow=workflow_result,
+        )
+
     workflow_result = await run_intel_update(request=request, db=db)
     proposal = await get_latest_proposal(db=db)
     proposal_dict = proposal.model_dump(mode="json")
 
     return DiscordMessageResponse(
-        route=decision.route,
+        route=final_route,
         summary="\n".join(
             [
-                decision.summary,
+                decision_summary,
                 f"Task `{task.id}` created.",
                 f"Workflow status: `{workflow_result.get('status')}`.",
                 _proposal_summary(proposal_dict),

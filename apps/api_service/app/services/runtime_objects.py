@@ -7,9 +7,18 @@ from sqlalchemy.orm import Session
 from libs.contracts.event import EventNormalized
 from libs.contracts.proposal import ProposalFinal
 from libs.contracts.research import ResearchReport
+from libs.contracts.review import ReviewRecord
 from libs.contracts.strategy import Strategy
-from libs.contracts.trading import TradingPlan
-from libs.db.models import EventModel, ProposalModel, ResearchReportModel, StrategyModel, TradingPlanModel
+from libs.contracts.trading import ExecutionRecord, TradingPlan
+from libs.db.models import (
+    EventModel,
+    ExecutionRecordModel,
+    ProposalModel,
+    ResearchReportModel,
+    ReviewModel,
+    StrategyModel,
+    TradingPlanModel,
+)
 
 
 
@@ -267,3 +276,73 @@ def trading_plan_model_to_contract(plan: TradingPlanModel) -> TradingPlan:
 
 def trading_plan_model_to_payload(plan: TradingPlanModel) -> dict:
     return trading_plan_model_to_contract(plan).model_dump(mode="json")
+
+
+def persist_execution_record(db: Session, execution_data: dict) -> ExecutionRecordModel:
+    execution_id = maybe_uuid(execution_data.get("id"))
+    if execution_id is None:
+        raise ValueError("execution record id is required")
+
+    record = db.get(ExecutionRecordModel, execution_id)
+    if not record:
+        record = ExecutionRecordModel(id=execution_id)
+        db.add(record)
+
+    record.trading_plan_id = maybe_uuid(execution_data.get("trading_plan_id"))
+    record.task_id = maybe_uuid(execution_data.get("task_id"))
+    record.action_type = str(execution_data.get("action_type", ""))
+    record.recorded_by = str(execution_data.get("recorded_by", ""))
+    record.notes = execution_data.get("notes")
+    record.result_json = execution_data.get("result", {})
+    return record
+
+
+def execution_record_model_to_contract(record: ExecutionRecordModel) -> ExecutionRecord:
+    return ExecutionRecord(
+        id=record.id,
+        trading_plan_id=record.trading_plan_id,
+        task_id=record.task_id,
+        action_type=record.action_type,
+        recorded_by=record.recorded_by,
+        notes=record.notes,
+        result=record.result_json or {},
+        created_at=record.created_at or datetime.now(timezone.utc),
+    )
+
+
+def execution_record_model_to_payload(record: ExecutionRecordModel) -> dict:
+    return execution_record_model_to_contract(record).model_dump(mode="json")
+
+
+def persist_review_record(db: Session, review_data: dict) -> ReviewModel:
+    review_id = maybe_uuid(review_data.get("id"))
+    if review_id is None:
+        raise ValueError("review id is required")
+
+    review = db.get(ReviewModel, review_id)
+    if not review:
+        review = ReviewModel(id=review_id)
+        db.add(review)
+
+    review.object_type = str(review_data.get("object_type", ""))
+    review.object_id = maybe_uuid(review_data.get("object_id"))
+    review.reviewer_type = str(review_data.get("reviewer_type", ""))
+    review.reviewer_name = str(review_data.get("reviewer_name", ""))
+    review.decision = str(review_data.get("decision", ""))
+    review.comments = review_data.get("comments")
+    review.score = review_data.get("score")
+    return review
+
+
+def review_model_to_contract(review: ReviewModel) -> ReviewRecord:
+    return ReviewRecord(
+        id=review.id,
+        object_type=review.object_type,
+        object_id=review.object_id,
+        reviewer_type=review.reviewer_type,
+        reviewer_name=review.reviewer_name,
+        decision=review.decision,
+        comments=review.comments,
+        score=to_float(review.score) if review.score is not None else None,
+        created_at=review.created_at or datetime.now(timezone.utc),
+    )

@@ -1,0 +1,14 @@
+skill_name: politburo_direct_reply_skill
+version: v0.1.0
+owner_department: 中央政治局
+status: draft
+description: 为政治局 direct reply 提供稳定的人设、项目定义和直答边界。
+input_schema: DirectDialogueInput
+output_schema: DirectDialogueReply
+chain_types:
+  - direct_dialogue
+tags:
+  - direct_reply
+  - gateway
+  - politburo
+prompt_file: prompt.md

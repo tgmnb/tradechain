@@ -267,8 +267,6 @@ class TradechainBot(discord.Client):
         channel_id = allowed_channel_id()
         if channel_id and message.channel.id != channel_id:
             return
-        if message.content.startswith("/"):
-            return
 
         async with message.channel.typing():
             result = await self.run_agent_message(
@@ -311,7 +309,7 @@ class TradechainBot(discord.Client):
 def embed_from_agent_result(result: dict) -> discord.Embed:
     route = result.get("route", "agent")
     summary = result.get("summary", "No summary returned.")
-    color = 0x1F8B4C if route in {"health", "proposal_latest", "intel_update"} else 0x2E86C1
+    color = 0x1F8B4C if route in {"health", "proposal_latest", "intel_update", "web_research", "policy_watch"} else 0x2E86C1
     embed = as_embed(f"Agent Route: {route}", summary, color=color)
 
     proposal = result.get("proposal") or {}
@@ -326,17 +324,43 @@ def embed_from_agent_result(result: dict) -> discord.Embed:
 
     workflow = result.get("workflow") or {}
     if workflow:
-        embed.add_field(
-            name="Workflow",
-            value="\n".join(
-                [
-                    f"status: `{workflow.get('status')}`",
-                    f"ingested: `{workflow.get('ingested')}`",
-                    f"proposals: `{workflow.get('created_proposals')}`",
-                ]
-            ),
-            inline=False,
-        )
+        if route == "web_research":
+            top_result = (workflow.get("results") or [{}])[0]
+            embed.add_field(
+                name="Web Research",
+                value="\n".join(
+                    [
+                        f"status: `{workflow.get('status')}`",
+                        f"results: `{workflow.get('result_count')}`",
+                        f"top title: {top_result.get('title', '-')}",
+                    ]
+                ),
+                inline=False,
+            )
+        elif route == "policy_watch":
+            embed.add_field(
+                name="Policy Watch",
+                value="\n".join(
+                    [
+                        f"status: `{workflow.get('status')}`",
+                        f"sources: `{workflow.get('source_count')}`",
+                        f"documents: `{workflow.get('document_count')}`",
+                    ]
+                ),
+                inline=False,
+            )
+        else:
+            embed.add_field(
+                name="Workflow",
+                value="\n".join(
+                    [
+                        f"status: `{workflow.get('status')}`",
+                        f"ingested: `{workflow.get('ingested')}`",
+                        f"proposals: `{workflow.get('created_proposals')}`",
+                    ]
+                ),
+                inline=False,
+            )
     elif route in {"help", "chat"}:
         embed.add_field(
             name="Dispatch",

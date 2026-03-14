@@ -75,6 +75,42 @@ class InternalClients:
             headers=self.headers_from_request(request, chain_type=chain_type),
         )
 
+    async def run_review_graph(
+        self,
+        request: Request,
+        *,
+        metadata: dict | None = None,
+        chain_type: str = "postclose_review",
+    ) -> dict:
+        return await self._post(
+            f"{self.settings.agent_core_service_url}/internal/graphs/review/run",
+            json={"chain_type": chain_type, "metadata": metadata or {}},
+            headers=self.headers_from_request(request, chain_type=chain_type),
+        )
+
+    async def run_master_graph(
+        self,
+        request: Request,
+        *,
+        task: dict | None = None,
+        proposal: dict | None = None,
+        metadata: dict | None = None,
+        chain_type: str = "major_task",
+    ) -> dict:
+        return await self._post(
+            f"{self.settings.agent_core_service_url}/internal/graphs/master/run",
+            json={
+                "task_id": task.get("id") if task else None,
+                "proposal": proposal,
+                "chain_type": chain_type,
+                "metadata": {
+                    **(metadata or {}),
+                    **({"task": task} if task else {}),
+                },
+            },
+            headers=self.headers_from_request(request, chain_type=chain_type),
+        )
+
     async def _post(self, url: str, json: dict, headers: dict[str, str]) -> dict:
         async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
             res = await client.post(url, json=json, headers=headers)

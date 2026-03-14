@@ -1,0 +1,14 @@
+skill_name: market_scan_skill
+version: v0.1.0
+owner_department: 中央军委
+status: draft
+description: 扫描市场异动、主题线索与关键资产偏离，为盘中监控提供候选信号。
+input_schema: MarketSnapshotInput
+output_schema: MarketWatchSignal
+chain_types:
+  - intraday_watch
+tags:
+  - market
+  - monitoring
+  - intraday
+prompt_file: prompt.md

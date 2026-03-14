@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     llm_model: str = Field(default="MiniMax-M2.5")
     llm_timeout_seconds: float = Field(default=60.0)
     llm_proxy_url: str = Field(default="")
+    browser_adapter: str = Field(default="http")
+    browser_user_agent: str = Field(default="tradechain-policy-crawler/0.1")
+    browser_request_timeout_seconds: float = Field(default=20.0)
+    web_proxy_url: str = Field(default="")
+    policy_watch_sources_path: str = Field(default="configs/policy_sources/top10_government_sites.yaml")
+    policy_watch_output_dir: str = Field(default="data/policy_watch")
+    web_search_provider: str = Field(default="bing_html")
+    web_search_base_url: str = Field(default="https://www.bing.com/search")
+    web_search_result_limit: int = Field(default=5)
+    web_search_fetch_page_limit: int = Field(default=3)
 
 
 @lru_cache

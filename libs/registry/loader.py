@@ -22,6 +22,8 @@ class RegistryBundle:
     departments: dict[str, SoulManifest]
     specialists: dict[str, SoulManifest]
     skills: dict[str, SkillManifest]
+    department_skill_map: dict[str, list[str]]
+    specialist_skill_map: dict[str, list[str]]
 
     def list_souls(self) -> list[SoulManifest]:
         return sorted([*self.departments.values(), *self.specialists.values()], key=lambda item: item.soul_id)
@@ -52,7 +54,13 @@ class RegistryBundle:
         specialist = self._select_specialist(chain_type=chain_type, department=department, specialist_id=specialist_id)
 
         skill_names: list[str] = []
-        for name in [*department.default_skills, *(specialist.additional_skills if specialist else [])]:
+        specialist_skill_names = self.specialist_skill_map.get(specialist.soul_id, []) if specialist else []
+        for name in [
+            *self.department_skill_map.get(department.soul_id, []),
+            *department.default_skills,
+            *specialist_skill_names,
+            *(specialist.additional_skills if specialist else []),
+        ]:
             if name not in skill_names:
                 skill_names.append(name)
 
@@ -60,11 +68,13 @@ class RegistryBundle:
             ResolvedSkillBinding(
                 skill_name=skill.skill_name,
                 version=skill.version,
+                skill_type=skill.skill_type,
                 description=skill.description,
                 input_schema=skill.input_schema,
                 output_schema=skill.output_schema,
                 prompt_template=skill.prompt_template,
                 owner_department=skill.owner_department,
+                runtime=skill.runtime,
             )
             for skill in (self.get_skill(name) for name in skill_names)
         ]
@@ -164,42 +174,80 @@ class RegistryBundle:
 
 def load_registry(root: str | Path | None = None) -> RegistryBundle:
     base = Path(root or ".").resolve()
-    department_dir = base / "configs" / "souls" / "departments"
-    specialist_dir = base / "configs" / "souls" / "specialists"
-    skills_dir = base / "skills"
+    department_dir = base / "configs" / "departments"
 
-    departments = _load_souls(department_dir, soul_type="department")
-    specialists = _load_souls(specialist_dir, soul_type="specialist")
-    skills = _load_skills(skills_dir)
-
-    return RegistryBundle(departments=departments, specialists=specialists, skills=skills)
-
-
-def _load_souls(directory: Path, *, soul_type: str) -> dict[str, SoulManifest]:
-    souls: dict[str, SoulManifest] = {}
-    for path in sorted(directory.glob("*.yaml")):
-        payload = _read_yaml(path)
-        soul = SoulManifest.model_validate({**payload, "soul_type": soul_type})
-        souls[soul.soul_id] = soul
-    return souls
-
-
-def _load_skills(directory: Path) -> dict[str, SkillManifest]:
+    departments: dict[str, SoulManifest] = {}
+    specialists: dict[str, SoulManifest] = {}
     skills: dict[str, SkillManifest] = {}
+    department_skill_map: dict[str, list[str]] = {}
+    specialist_skill_map: dict[str, list[str]] = {}
+
+    for dept_path in sorted(path for path in department_dir.iterdir() if path.is_dir()):
+        soul_path = dept_path / "soul.yaml"
+        if not soul_path.exists():
+            raise RegistryError(f"department soul missing: {soul_path}")
+
+        department = SoulManifest.model_validate({**_read_yaml(soul_path), "soul_type": "department"})
+        if department.soul_id in departments:
+            raise RegistryError(f"duplicate department soul id: {department.soul_id}")
+        departments[department.soul_id] = department
+        department_skill_map[department.soul_id] = _load_skills_from_dir(dept_path / "skills", skills)
+
+        specialist_root = dept_path / "specialists"
+        if not specialist_root.exists():
+            continue
+
+        for specialist_path in sorted(path for path in specialist_root.iterdir() if path.is_dir()):
+            specialist_soul_path = specialist_path / "soul.yaml"
+            if not specialist_soul_path.exists():
+                raise RegistryError(f"specialist soul missing: {specialist_soul_path}")
+
+            specialist = SoulManifest.model_validate({**_read_yaml(specialist_soul_path), "soul_type": "specialist"})
+            if specialist.department_id != department.soul_id:
+                raise RegistryError(
+                    f"specialist soul department mismatch: {specialist.soul_id} expected {department.soul_id}, "
+                    f"got {specialist.department_id}"
+                )
+            if specialist.soul_id in specialists:
+                raise RegistryError(f"duplicate specialist soul id: {specialist.soul_id}")
+            specialists[specialist.soul_id] = specialist
+            specialist_skill_map[specialist.soul_id] = _load_skills_from_dir(specialist_path / "skills", skills)
+
+    return RegistryBundle(
+        departments=departments,
+        specialists=specialists,
+        skills=skills,
+        department_skill_map=department_skill_map,
+        specialist_skill_map=specialist_skill_map,
+    )
+
+
+def _load_skills_from_dir(directory: Path, skills: dict[str, SkillManifest]) -> list[str]:
+    if not directory.exists():
+        return []
+
+    discovered: list[str] = []
     for manifest_path in sorted(directory.glob("*/manifest.yaml")):
-        payload = _read_yaml(manifest_path)
-        prompt_file = payload.pop("prompt_file", "prompt.md")
-        prompt_path = manifest_path.with_name(prompt_file)
-        if not prompt_path.exists():
-            raise RegistryError(f"skill prompt missing: {prompt_path}")
-        skill = SkillManifest.model_validate(
-            {
-                **payload,
-                "prompt_template": prompt_path.read_text(encoding="utf-8").strip(),
-            }
-        )
+        skill = _load_skill_manifest(manifest_path)
+        if skill.skill_name in skills:
+            raise RegistryError(f"duplicate skill name: {skill.skill_name}")
         skills[skill.skill_name] = skill
-    return skills
+        discovered.append(skill.skill_name)
+    return discovered
+
+
+def _load_skill_manifest(manifest_path: Path) -> SkillManifest:
+    payload = _read_yaml(manifest_path)
+    prompt_file = payload.pop("prompt_file", "prompt.md")
+    prompt_path = manifest_path.with_name(prompt_file)
+    if not prompt_path.exists():
+        raise RegistryError(f"skill prompt missing: {prompt_path}")
+    return SkillManifest.model_validate(
+        {
+            **payload,
+            "prompt_template": prompt_path.read_text(encoding="utf-8").strip(),
+        }
+    )
 
 
 def _read_yaml(path: Path) -> dict:

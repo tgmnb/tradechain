@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from apps.api_service.app.api import (
     agent,
+    execution_records,
     events,
     health,
     proposals,
@@ -27,5 +28,6 @@ app.include_router(registry.router)
 app.include_router(research_reports.router)
 app.include_router(strategies.router)
 app.include_router(trading_plans.router)
+app.include_router(execution_records.router)
 app.include_router(workflows.router)
 app.include_router(agent.router)

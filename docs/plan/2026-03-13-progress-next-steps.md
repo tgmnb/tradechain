@@ -23,8 +23,10 @@
 
 为支持你专注 `soul` 和 `skill` 内容建设，这轮优先补了框架层：
 
-- `configs/souls/departments/` 与 `configs/souls/specialists/`
-- `skills/<skill_name>/manifest.yaml` 与 `prompt.md`
+- `configs/departments/<department_id>/soul.yaml`
+- `configs/departments/<department_id>/skills/<skill_name>/manifest.yaml`
+- `configs/departments/<department_id>/specialists/<specialist_id>/soul.yaml`
+- `configs/departments/<department_id>/specialists/<specialist_id>/skills/<skill_name>/manifest.yaml`
 - `libs/contracts` 新增 registry / research / strategy / trading contracts
 - `libs/registry` 实现两层 soul 继承与 skill 绑定解析
 - `soul_versions`、`research_reports`、`strategies`、`trading_plans`、`execution_records` 数据对象与迁移
@@ -34,15 +36,30 @@
 
 从现在开始，你可以主要在这些目录里迭代内容，不需要再等框架代码：
 
-- `configs/souls/departments/`
-- `configs/souls/specialists/`
-- `skills/*/manifest.yaml`
-- `skills/*/prompt.md`
+- `configs/departments/`
 
 建议优先顺序：
 - 把三个部门 soul 写厚：国务院、国家统计局、中央军委
 - 把三个专员 soul 写细：情报专员、议案专员、计划专员
 - 先把 4 个核心 skill prompt 打磨到可用：`news_parse_skill`、`proposal_draft_skill`、`strategy_synthesis_skill`、`plan_generation_skill`
+
+## 2026-03-14 内容层补强
+
+这一轮已经把上述优先项推进到第一版“可用于运行时提示”的水平：
+
+- 三个部门 soul 已补齐更具体的 `mission / responsibilities / focus / guardrails / style_notes`
+- 三个专员 soul 已补齐链路内角色边界、输入输出偏好和更细的约束
+- 另外新增了 `watch_officer / review_officer / improvement_officer`，把 `intraday_watch / postclose_review / nightly_improvement` 预留链路挂到明确 specialist
+- 4 个核心 skill prompt 已从短模板升级为结构化指导，包含建议输出结构和保守退让策略
+- 另外补入了 `market_scan_skill`、`commodity_logic_skill`、`execution_compare_skill`、`improvement_ticket_skill` 这 4 个后续链路所需的预备 skill
+- registry 目录结构已改成“每个部门一个文件夹，部门内含 soul/skills/specialists，专员默认继承部门 skill，再叠加自己的 skill”
+- registry 回归测试已补，确保这些 richer prompt 能实际进入 resolved runtime profile
+
+下一步更适合继续推进的方向：
+
+- 针对 `intraday_watch` 设计新的部门/专员组合或扩充现有 soul 的实时监控职责
+- 为 `postclose_review` 与 `nightly_improvement` 补充复盘型 skill
+- 在真实样本上校准 4 个核心 skill 的输出长度、字段稳定性和中文风格
 
 ## 下次到部署环境要做的事
 
@@ -71,3 +88,18 @@
 - `daily_preopen`
 - `politburo direct reply`
 - `Discord plain message -> politburo -> direct reply / intel_update`
+- `execution_record intake -> postclose_review placeholder`
+
+## 2026-03-14 执行记录补口
+
+为继续推进 `postclose_review`，这轮又补了一层最小数据闭环：
+
+- 新增 `execution_records` API，可记录交易计划对应的执行动作
+- `postclose_review` 不再是纯静态 blocked：无计划时会明确返回 `no_trading_plan`，有 execution records 时会调用 `review_graph` placeholder
+- 回归测试覆盖了 `execution_record` 创建和 `postclose_review` 的占位交接路径
+
+这意味着当前真正还缺的不是“有没有入口”，而是：
+
+- execution record 的真实采集来源
+- review graph 的实际节点实现
+- nightly evaluation / approval 数据链

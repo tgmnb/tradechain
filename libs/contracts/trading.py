@@ -35,6 +35,15 @@ class TradingPlan(ContractModel):
     updated_at: datetime
 
 
+class ExecutionRecordCreateRequest(ContractModel):
+    trading_plan_id: UUID
+    task_id: UUID | None = None
+    action_type: str = Field(min_length=1, max_length=50)
+    recorded_by: str = Field(min_length=1, max_length=100)
+    notes: str | None = None
+    result: dict[str, Any] = Field(default_factory=dict)
+
+
 class ExecutionRecord(ContractModel):
     id: UUID
     trading_plan_id: UUID

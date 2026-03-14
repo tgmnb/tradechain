@@ -4,12 +4,14 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from apps.agent_core.app.graphs.event_to_proposal import build_event_to_proposal_graph
+from apps.agent_core.app.graphs.master_graph import build_master_graph
 from apps.agent_core.app.graphs.proposal_to_plan import build_proposal_to_plan_graph
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse
 
 router = APIRouter(prefix="/internal/graphs", tags=["graphs"])
 event_to_proposal_graph = build_event_to_proposal_graph()
 proposal_to_plan_graph = build_proposal_to_plan_graph()
+master_graph = build_master_graph()
 
 
 
@@ -125,6 +127,31 @@ async def run_proposal_to_plan(
 @router.post("/review/run", dependencies=[Depends(require_internal_key)])
 async def run_review_placeholder(payload: GraphRunRequest) -> dict:
     return _placeholder("review_graph", payload)
+
+
+@router.post("/master/run", dependencies=[Depends(require_internal_key)])
+async def run_master_placeholder(payload: GraphRunRequest) -> dict:
+    state = {
+        "task_id": str(payload.task_id) if payload.task_id else None,
+        "chain_type": payload.chain_type or "major_task",
+        "proposal": payload.proposal,
+        "metadata": payload.metadata,
+        "request_id": str(uuid4()),
+        "actor": "api-service",
+        "graph_name": "master_graph",
+        "messages": [],
+    }
+    result = master_graph.invoke(state)
+    return {
+        "graph_name": "master_graph",
+        "status": "needs_human" if result.get("requires_human") else "completed",
+        "requires_human": result.get("requires_human", False),
+        "goal_brief": result.get("goal_brief"),
+        "goal_review": result.get("goal_review"),
+        "execution_entry": result.get("execution_entry"),
+        "messages": result.get("messages", []),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @router.post("/evaluation/run", dependencies=[Depends(require_internal_key)])

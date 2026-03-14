@@ -1,0 +1,14 @@
+skill_name: review_gate_skill
+version: v0.1.0
+owner_department: 人民代表大会
+status: draft
+description: 对目标、方案或结果对象进行结构化审议，输出通过或驳回意见。
+input_schema: ReviewGateInput
+output_schema: ReviewGateDecision
+chain_types:
+  - major_task
+tags:
+  - review
+  - governance
+  - approval
+prompt_file: prompt.md

@@ -1,0 +1,145 @@
+sources:
+  - country: United States
+    economy_rank: 1
+    source_id: us_white_house_briefing
+    source_name: The White House Briefing Room
+    department_id: national_statistics_bureau
+    url: https://www.whitehouse.gov/briefing-room/
+    allowed_domains:
+      - whitehouse.gov
+    include_keywords:
+      - policy
+      - executive order
+      - memorandum
+      - guidance
+      - fact sheet
+      - statement
+  - country: China
+    economy_rank: 2
+    source_id: cn_state_council_policy
+    source_name: 中国政府网 政策
+    department_id: national_statistics_bureau
+    url: https://www.gov.cn/zhengce/index.htm
+    allowed_domains:
+      - gov.cn
+    include_keywords:
+      - 政策
+      - 通知
+      - 意见
+      - 指导
+      - 方案
+      - 公告
+  - country: Germany
+    economy_rank: 3
+    source_id: de_federal_government_news
+    source_name: The Federal Government of Germany News
+    department_id: national_statistics_bureau
+    url: https://www.bundesregierung.de/breg-en/news
+    allowed_domains:
+      - bundesregierung.de
+    include_keywords:
+      - strategy
+      - law
+      - policy
+      - guidance
+      - package
+      - regulation
+  - country: Japan
+    economy_rank: 4
+    source_id: jp_kantei_news
+    source_name: Prime Minister's Office of Japan
+    department_id: national_statistics_bureau
+    url: https://japan.kantei.go.jp/
+    allowed_domains:
+      - kantei.go.jp
+    include_keywords:
+      - policy
+      - measures
+      - cabinet
+      - decision
+      - statement
+  - country: India
+    economy_rank: 5
+    source_id: in_pib_releases
+    source_name: Press Information Bureau
+    department_id: national_statistics_bureau
+    url: https://pib.gov.in/
+    allowed_domains:
+      - pib.gov.in
+    include_keywords:
+      - ministry
+      - scheme
+      - policy
+      - guideline
+      - cabinet
+  - country: United Kingdom
+    economy_rank: 6
+    source_id: uk_government_announcements
+    source_name: GOV.UK Announcements
+    department_id: national_statistics_bureau
+    url: https://www.gov.uk/search/news-and-communications
+    allowed_domains:
+      - gov.uk
+    include_keywords:
+      - guidance
+      - policy
+      - framework
+      - plan
+      - update
+  - country: France
+    economy_rank: 7
+    source_id: fr_government_news
+    source_name: Gouvernement.fr
+    department_id: national_statistics_bureau
+    url: https://www.gouvernement.fr/en/all-government-news
+    allowed_domains:
+      - gouvernement.fr
+    include_keywords:
+      - policy
+      - plan
+      - decree
+      - ministry
+      - guidance
+  - country: Italy
+    economy_rank: 8
+    source_id: it_government_presidency
+    source_name: Presidenza del Consiglio dei Ministri
+    department_id: national_statistics_bureau
+    url: https://www.governo.it/en/news
+    allowed_domains:
+      - governo.it
+    include_keywords:
+      - decreto
+      - policy
+      - plan
+      - program
+      - guidance
+  - country: Canada
+    economy_rank: 9
+    source_id: ca_government_news
+    source_name: Government of Canada News
+    department_id: national_statistics_bureau
+    url: https://www.canada.ca/en/news.html
+    allowed_domains:
+      - canada.ca
+      - gc.ca
+    include_keywords:
+      - guidance
+      - regulation
+      - policy
+      - framework
+      - update
+  - country: Brazil
+    economy_rank: 10
+    source_id: br_federal_government_news
+    source_name: Gov.br News
+    department_id: national_statistics_bureau
+    url: https://www.gov.br/planalto/en/latest-news
+    allowed_domains:
+      - gov.br
+    include_keywords:
+      - decree
+      - policy
+      - guidance
+      - measure
+      - plan
