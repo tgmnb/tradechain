@@ -1,0 +1,86 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "chain_type": {
+      "default": "intraday_watch",
+      "maxLength": 50,
+      "title": "Chain Type",
+      "type": "string"
+    },
+    "asset_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Asset Scope",
+      "type": "array"
+    },
+    "trigger_type": {
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Trigger Type",
+      "type": "string"
+    },
+    "severity": {
+      "default": "medium",
+      "maxLength": 20,
+      "title": "Severity",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "evidence": {
+      "additionalProperties": true,
+      "title": "Evidence",
+      "type": "object"
+    },
+    "follow_up_action": {
+      "default": "notify",
+      "maxLength": 50,
+      "title": "Follow Up Action",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "trigger_type",
+    "summary",
+    "created_at"
+  ],
+  "title": "WatchObservation",
+  "type": "object"
+}

@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "ReviewDecision": {
+      "enum": [
+        "pass",
+        "reject"
+      ],
+      "title": "ReviewDecision",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "trading_plan_id": {
+      "format": "uuid",
+      "title": "Trading Plan Id",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "reviewer_type": {
+      "default": "agent",
+      "maxLength": 30,
+      "title": "Reviewer Type",
+      "type": "string"
+    },
+    "reviewer_name": {
+      "default": "review_graph",
+      "maxLength": 100,
+      "title": "Reviewer Name",
+      "type": "string"
+    },
+    "decision": {
+      "$ref": "#/$defs/ReviewDecision"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "deviations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Deviations",
+      "type": "array"
+    },
+    "issues": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "follow_up_actions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Follow Up Actions",
+      "type": "array"
+    },
+    "evidence_summary": {
+      "additionalProperties": true,
+      "title": "Evidence Summary",
+      "type": "object"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Score"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "trading_plan_id",
+    "decision",
+    "summary",
+    "created_at"
+  ],
+  "title": "PostcloseReview",
+  "type": "object"
+}

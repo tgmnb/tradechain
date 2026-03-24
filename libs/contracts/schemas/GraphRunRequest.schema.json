@@ -4,6 +4,7 @@
     "event": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -16,6 +17,7 @@
     "proposal": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -28,6 +30,7 @@
     "research_report": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -40,6 +43,7 @@
     "strategy": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -68,6 +72,7 @@
       "type": "string"
     },
     "metadata": {
+      "additionalProperties": true,
       "title": "Metadata",
       "type": "object"
     }

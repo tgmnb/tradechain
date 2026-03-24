@@ -41,6 +41,7 @@
       "type": "number"
     },
     "raw_payload": {
+      "additionalProperties": true,
       "title": "Raw Payload",
       "type": "object"
     },

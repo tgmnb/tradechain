@@ -1,11 +1,6 @@
 {
   "additionalProperties": false,
   "properties": {
-    "id": {
-      "format": "uuid",
-      "title": "Id",
-      "type": "string"
-    },
     "trading_plan_id": {
       "format": "uuid",
       "title": "Trading Plan Id",
@@ -59,20 +54,13 @@
       "additionalProperties": true,
       "title": "Result",
       "type": "object"
-    },
-    "created_at": {
-      "format": "date-time",
-      "title": "Created At",
-      "type": "string"
     }
   },
   "required": [
-    "id",
     "trading_plan_id",
     "action_type",
-    "recorded_by",
-    "created_at"
+    "recorded_by"
   ],
-  "title": "ExecutionRecord",
+  "title": "ExecutionRecordCreateRequest",
   "type": "object"
 }

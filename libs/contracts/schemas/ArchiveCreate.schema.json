@@ -12,10 +12,12 @@
       "type": "string"
     },
     "payload": {
+      "additionalProperties": true,
       "title": "Payload",
       "type": "object"
     },
     "metadata": {
+      "additionalProperties": true,
       "title": "Metadata",
       "type": "object"
     },

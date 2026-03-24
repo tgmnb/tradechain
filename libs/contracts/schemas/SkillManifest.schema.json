@@ -32,6 +32,15 @@
       "title": "Status",
       "type": "string"
     },
+    "skill_type": {
+      "default": "prompt",
+      "enum": [
+        "prompt",
+        "functional"
+      ],
+      "title": "Skill Type",
+      "type": "string"
+    },
     "description": {
       "maxLength": 500,
       "minLength": 1,
@@ -68,6 +77,11 @@
       "minLength": 1,
       "title": "Prompt Template",
       "type": "string"
+    },
+    "runtime": {
+      "additionalProperties": true,
+      "title": "Runtime",
+      "type": "object"
     }
   },
   "required": [

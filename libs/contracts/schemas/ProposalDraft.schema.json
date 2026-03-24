@@ -80,11 +80,7 @@
       "type": "number"
     },
     "status": {
-      "allOf": [
-        {
-          "$ref": "#/$defs/ProposalStatus"
-        }
-      ],
+      "$ref": "#/$defs/ProposalStatus",
       "default": "draft"
     },
     "schema_version": {

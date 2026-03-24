@@ -135,6 +135,15 @@
           "title": "Version",
           "type": "string"
         },
+        "skill_type": {
+          "default": "prompt",
+          "enum": [
+            "prompt",
+            "functional"
+          ],
+          "title": "Skill Type",
+          "type": "string"
+        },
         "description": {
           "maxLength": 500,
           "minLength": 1,
@@ -170,6 +179,11 @@
           ],
           "default": null,
           "title": "Owner Department"
+        },
+        "runtime": {
+          "additionalProperties": true,
+          "title": "Runtime",
+          "type": "object"
         }
       },
       "required": [
@@ -202,6 +216,7 @@
     "proposal": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -211,9 +226,23 @@
       "default": null,
       "title": "Proposal"
     },
+    "review": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Review"
+    },
     "research_report": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -226,6 +255,7 @@
     "strategy": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -238,6 +268,7 @@
     "trading_plan": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -250,6 +281,7 @@
     "execution_record": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -273,6 +305,7 @@
     "archive_ref": {
       "anyOf": [
         {
+          "additionalProperties": true,
           "type": "object"
         },
         {
@@ -284,6 +317,7 @@
     },
     "archive_refs": {
       "items": {
+        "additionalProperties": true,
         "type": "object"
       },
       "title": "Archive Refs",
@@ -291,6 +325,7 @@
     },
     "messages": {
       "items": {
+        "additionalProperties": true,
         "type": "object"
       },
       "title": "Messages",

@@ -1,0 +1,116 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "target_type": {
+      "maxLength": 30,
+      "minLength": 1,
+      "title": "Target Type",
+      "type": "string"
+    },
+    "target_name": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Target Name",
+      "type": "string"
+    },
+    "source_period_start": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Period Start"
+    },
+    "source_period_end": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Period End"
+    },
+    "issue_summary": {
+      "title": "Issue Summary",
+      "type": "string"
+    },
+    "impact_description": {
+      "title": "Impact Description",
+      "type": "string"
+    },
+    "root_cause": {
+      "additionalProperties": true,
+      "title": "Root Cause",
+      "type": "object"
+    },
+    "proposed_fix": {
+      "additionalProperties": true,
+      "title": "Proposed Fix",
+      "type": "object"
+    },
+    "status": {
+      "default": "pending_approval",
+      "maxLength": 30,
+      "title": "Status",
+      "type": "string"
+    },
+    "approved_by": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved By"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "target_type",
+    "target_name",
+    "issue_summary",
+    "impact_description",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ImprovementTicket",
+  "type": "object"
+}

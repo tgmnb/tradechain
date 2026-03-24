@@ -14,6 +14,15 @@
           "title": "Version",
           "type": "string"
         },
+        "skill_type": {
+          "default": "prompt",
+          "enum": [
+            "prompt",
+            "functional"
+          ],
+          "title": "Skill Type",
+          "type": "string"
+        },
         "description": {
           "maxLength": 500,
           "minLength": 1,
@@ -49,6 +58,11 @@
           ],
           "default": null,
           "title": "Owner Department"
+        },
+        "runtime": {
+          "additionalProperties": true,
+          "title": "Runtime",
+          "type": "object"
         }
       },
       "required": [

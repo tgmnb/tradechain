@@ -33,10 +33,12 @@
       "type": "integer"
     },
     "goal_json": {
+      "additionalProperties": true,
       "title": "Goal Json",
       "type": "object"
     },
     "context_json": {
+      "additionalProperties": true,
       "title": "Context Json",
       "type": "object"
     },

@@ -54,8 +54,8 @@
     "score": {
       "anyOf": [
         {
-          "maximum": 100.0,
-          "minimum": 0.0,
+          "maximum": 100,
+          "minimum": 0,
           "type": "number"
         },
         {

@@ -12,7 +12,10 @@ fi
 mkdir -p data/policy_watch
 
 if [[ ! -x .venv/bin/python ]]; then
-  python3 -m venv .venv
+  if ! python3 -m venv .venv >/dev/null 2>&1; then
+    echo "python3 -m venv is unavailable; bootstrapping local virtualenv tooling..."
+    ./scripts/bootstrap_python_env.sh
+  fi
 fi
 
 if ! .venv/bin/python - <<'PY' >/dev/null 2>&1
