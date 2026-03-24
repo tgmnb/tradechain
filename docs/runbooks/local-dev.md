@@ -18,6 +18,22 @@
 8. Optional registry projection: `PYTHONPATH=. python scripts/sync_registry_to_db.py`
 9. Optional schema export: `PYTHONPATH=. python scripts/export_contract_schemas.py`
 
+## Python Validation Environment
+
+`scripts/install_local.sh` now supports two paths:
+
+- preferred: use `python3 -m venv .venv`
+- fallback: if `ensurepip` / `venv` bootstrap is unavailable, use `scripts/bootstrap_python_env.sh` to create a repository-local pip + virtualenv toolchain under `.local/`
+
+Validated local commands:
+
+- `.venv/bin/python scripts/export_contract_schemas.py`
+- `.venv/bin/pytest -q`
+- `./scripts/openspec.sh validate replan-project-roadmap`
+- `./scripts/openspec.sh validate implement-postclose-review-baseline`
+- `./scripts/openspec.sh validate propose-intraday-watch-baseline`
+- `./scripts/openspec.sh validate propose-nightly-improvement-baseline`
+
 ## Smoke Checks
 
 - Health: `curl --noproxy '*' http://127.0.0.1:8000/healthz`
@@ -59,6 +75,7 @@ These checks still need the deployment environment or external connectivity:
 - Discord bot command sync and channel restrictions
 - n8n import plus scheduled execution
 - Live market data / intraday watch behavior
+- Docker Compose execution in restricted sandbox environments that cannot join the host mount namespace
 
 ## Discord bot
 
