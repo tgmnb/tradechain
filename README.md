@@ -1,6 +1,6 @@
-# Tradechain Sprint 1-2 Foundation (WSL/Linux + Discord)
+# Tradechain Foundation (WSL/Linux + Discord)
 
-This repository delivers the Sprint 1-2 infrastructure baseline for the AI investment research agent system.
+This repository delivers the current infrastructure and workflow baseline for the AI investment research agent system.
 
 ## What is implemented
 
@@ -129,10 +129,10 @@ These are forwarded across services for traceability.
 - `GET /v1/proposals/{proposal_id}`
 - `GET /v1/proposals/latest`
 - `POST /v1/workflows/intel-update/run`
-- `POST /v1/workflows/major-task/run` (placeholder)
-- `POST /v1/workflows/daily-preopen/run` (placeholder)
+- `POST /v1/workflows/major-task/run`
+- `POST /v1/workflows/daily-preopen/run`
 - `POST /v1/workflows/intraday-watch/run` (placeholder)
-- `POST /v1/workflows/postclose-review/run` (placeholder)
+- `POST /v1/workflows/postclose-review/run` (baseline review path)
 - `POST /v1/workflows/nightly-improvement/run` (placeholder)
 - `GET /healthz`
 
@@ -156,7 +156,7 @@ Relevant env vars:
 
 - `POST /internal/ingestion/fetch` (`ingestion-service`)
 - `POST /internal/graphs/event-to-proposal/run` (`agent-core`)
-- `POST /internal/graphs/review/run` (`agent-core`, placeholder)
+- `POST /internal/graphs/review/run` (`agent-core`, baseline review graph)
 - `POST /internal/graphs/evaluation/run` (`agent-core`, placeholder)
 - `POST /internal/graphs/improvement/run` (`agent-core`, placeholder)
 - `POST /internal/archive` (`archive-service`)
@@ -244,16 +244,34 @@ Plain channel messages also flow through a top-level politburo dispatcher:
 
 Test files and scenarios are provided under `tests/`, but this delivery intentionally does **not** execute integration/regression runs yet.
 
-## Sprint boundary
+## OpenSpec planning
+
+Project planning is now tracked in-repo through OpenSpec.
+
+- Local CLI entrypoint: `./scripts/openspec.sh`
+- List active changes: `./scripts/openspec.sh list`
+- Validate a change: `./scripts/openspec.sh validate <change-name>`
+- Make target: `make openspec-status`
+
+Current active planning changes include:
+
+- `replan-project-roadmap`
+- `implement-postclose-review-baseline`
+- `propose-intraday-watch-baseline`
+- `propose-nightly-improvement-baseline`
+
+## Current boundary
 
 Implemented now:
 
-- Sprint 1 foundation infra + core schema
-- Sprint 2 event -> proposal minimal loop with archive + Discord entry
+- Foundation infra + core schema
+- Event -> proposal minimal loop with archive + Discord entry
+- Proposal -> research -> strategy -> trading plan planning loop
+- Postclose review baseline with structured review output and archive hand-off
 
 Intentionally deferred:
 
 - Real news/market data connectors
-- Departmental research graphs beyond Sprint 2
+- Full intraday watch implementation with live market data
 - Real-time trading execution and broker connectivity
 - Full evaluation/improvement automation

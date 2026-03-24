@@ -1,4 +1,4 @@
-.PHONY: up down logs migrate seed schemas registry-sync
+.PHONY: up down logs migrate seed schemas registry-sync openspec-status
 
 up:
 	docker compose up --build
@@ -20,3 +20,6 @@ schemas:
 
 registry-sync:
 	PYTHONPATH=. python scripts/sync_registry_to_db.py
+
+openspec-status:
+	./scripts/openspec.sh list
