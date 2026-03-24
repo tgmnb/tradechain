@@ -128,6 +128,10 @@ These are forwarded across services for traceability.
 - `POST /v1/proposals/draft`
 - `GET /v1/proposals/{proposal_id}`
 - `GET /v1/proposals/latest`
+- `GET /v1/improvement/scores/latest`
+- `GET /v1/improvement/scores/by-agent/{agent_name}`
+- `GET /v1/improvement/tickets/latest`
+- `GET /v1/improvement/tickets/by-target/{target_type}/{target_name}`
 - `GET /v1/reviews/latest`
 - `GET /v1/reviews/by-object/{object_type}/{object_id}`
 - `POST /v1/workflows/intel-update/run`
@@ -169,7 +173,9 @@ Relevant env vars:
 - `TaskCreate` / `TaskRead`
 - `EventIn` / `EventNormalized`
 - `ProposalDraftRequest` / `ProposalDraft` / `ProposalFinal`
+- `AgentScore` / `ImprovementTicket`
 - `ReviewRecord` / `PostcloseReview`
+- `WatchObservation`
 - `ArchiveCreate` / `ArchiveRef`
 - `GraphRunRequest` / `GraphRunResponse` / `GraphState`
 

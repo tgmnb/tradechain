@@ -48,6 +48,7 @@ Readiness for each workflow should be evaluated using three gates:
 
 - `api-service`: external API gateway, registry read APIs, politburo direct-reply API, and workflow hand-off
 - `api-service` now also exposes review read APIs for governance review and postclose review retrieval
+- `api-service` now also exposes read APIs for improvement tickets and agent score snapshots
 - `api-service` now also owns outbound web research and policy crawl execution, using host-network access so it can reuse the local HTTP proxy path
 - `ingestion-service`: provider adapter abstraction + mock source
 - `agent-core`: LangGraph graphs with soul/skill-aware profile resolution
@@ -71,6 +72,7 @@ Readiness for each workflow should be evaluated using three gates:
 - Registry loader in `libs/registry`
 - `execution_records` API surface for recording plan-vs-action evidence before review workflows
 - `reviews` API surface for reading persisted governance and postclose review records
+- `improvement` API surface for reading persisted score snapshots and improvement tickets
 - Registry skill manifests now support minimal `functional` runtime metadata in addition to prompt-only skills
 
 ## Reliability baseline
