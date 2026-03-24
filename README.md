@@ -268,6 +268,11 @@ Current active planning changes include:
 - `propose-intraday-watch-baseline`
 - `propose-nightly-improvement-baseline`
 
+Reference docs:
+
+- `docs/plan/2026-03-24-openspec-roadmap-index.md`
+- `docs/runbooks/openspec.md`
+
 ## Current boundary
 
 Implemented now:
