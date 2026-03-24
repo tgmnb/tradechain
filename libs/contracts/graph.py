@@ -43,6 +43,7 @@ class GraphRunResponse(ContractModel):
     status: str
     requires_human: bool = False
     proposal: dict[str, Any] | None = None
+    review: dict[str, Any] | None = None
     research_report: dict[str, Any] | None = None
     strategy: dict[str, Any] | None = None
     trading_plan: dict[str, Any] | None = None

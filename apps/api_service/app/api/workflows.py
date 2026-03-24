@@ -14,12 +14,14 @@ from apps.api_service.app.services.web_research_service import run_web_research
 from apps.api_service.app.services.runtime_objects import (
     execution_record_model_to_payload,
     event_model_to_payload,
+    postclose_review_to_review_record,
     persist_proposal,
     persist_research_report,
     persist_review_record,
     persist_strategy,
     persist_trading_plan,
     proposal_model_to_payload,
+    review_payload_to_contract,
     trading_plan_model_to_payload,
 )
 from apps.api_service.app.services.runtime_profiles import planning_profile_for, proposal_profile_for
@@ -352,10 +354,25 @@ async def run_postclose_review(request: Request, db: Session = Depends(get_db)) 
             "execution_record_count": len(execution_records),
         },
     )
+    review_payload = review_result.get("review")
+    if not review_payload:
+        return {
+            "status": "failed",
+            "reason": "review_generation_failed",
+            "message": "review_graph did not return a structured review result.",
+            "trading_plan_id": str(plan.id),
+        }
+
+    persisted_review = persist_review_record(db, postclose_review_to_review_record(review_payload))
+    db.commit()
+    db.refresh(persisted_review)
+    structured_review = review_payload_to_contract(review_payload)
     return {
-        "status": "placeholder",
+        "status": "success",
         "trading_plan_id": str(plan.id),
         "execution_record_count": len(execution_records),
+        "review_id": str(persisted_review.id),
+        "review": structured_review.model_dump(mode="json"),
         "review_graph": review_result,
     }
 

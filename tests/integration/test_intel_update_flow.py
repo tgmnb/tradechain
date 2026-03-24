@@ -134,9 +134,24 @@ async def test_execution_record_api_unblocks_postclose_review() -> None:
     async def fake_run_review_graph(request, *, metadata=None, chain_type="postclose_review"):
         return {
             "graph_name": "review_graph",
-            "status": "placeholder",
+            "status": "completed",
             "chain_type": chain_type,
-            "metadata": metadata or {},
+            "review": {
+                "id": str(uuid4()),
+                "trading_plan_id": str(plan_id),
+                "task_id": None,
+                "reviewer_type": "agent",
+                "reviewer_name": "review_graph",
+                "decision": "pass",
+                "summary": "baseline review completed",
+                "deviations": ["one deviation"],
+                "issues": ["one issue"],
+                "follow_up_actions": ["one follow up"],
+                "evidence_summary": {"execution_record_count": 1, "evidence_sources": ["manual"]},
+                "score": 80,
+                "metadata": metadata or {},
+                "created_at": "2026-03-24T00:00:00Z",
+            },
         }
 
     original_run_review_graph = internal_clients.run_review_graph
@@ -165,10 +180,56 @@ async def test_execution_record_api_unblocks_postclose_review() -> None:
 
     assert created.action_type == "manual_buy"
     assert created.trading_plan_id == plan_id
+    assert created.evidence_source == "manual"
 
-    assert workflow_response["status"] == "placeholder"
+    assert workflow_response["status"] == "success"
     assert workflow_response["execution_record_count"] == 1
+    assert workflow_response["review"]["summary"] == "baseline review completed"
+    assert workflow_response["review"]["evidence_summary"]["execution_record_count"] == 1
+    assert workflow_response["review_id"]
     assert workflow_response["review_graph"]["graph_name"] == "review_graph"
+
+
+@pytest.mark.anyio
+async def test_postclose_review_requires_execution_evidence_when_plan_exists() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    with TestingSessionLocal() as db:
+        db.add(
+            TradingPlanModel(
+                id=uuid4(),
+                strategy_id=uuid4(),
+                plan_date=date(2026, 3, 14),
+                title="Evidence Missing Plan",
+                objective="Verify blocked path",
+                entry_conditions={"items": ["entry"]},
+                exit_conditions={"items": ["exit"]},
+                monitoring_points={"items": ["monitor"]},
+                checklist={"items": ["check"]},
+                status="active",
+                metadata_json={},
+            )
+        )
+        db.commit()
+
+    class DummyRequest:
+        headers = {"X-API-Key": "external-dev-key", "X-Actor": "test"}
+
+    try:
+        with TestingSessionLocal() as db:
+            response = await run_postclose_review(DummyRequest(), db=db)
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    assert response["status"] == "blocked"
+    assert response["reason"] == "execution_records_required"
 
 
 @pytest.mark.anyio

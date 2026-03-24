@@ -6,11 +6,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from apps.agent_core.app.graphs.event_to_proposal import build_event_to_proposal_graph
 from apps.agent_core.app.graphs.master_graph import build_master_graph
 from apps.agent_core.app.graphs.proposal_to_plan import build_proposal_to_plan_graph
+from apps.agent_core.app.graphs.review_graph import build_review_graph
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse
 
 router = APIRouter(prefix="/internal/graphs", tags=["graphs"])
 event_to_proposal_graph = build_event_to_proposal_graph()
 proposal_to_plan_graph = build_proposal_to_plan_graph()
+review_graph = build_review_graph()
 master_graph = build_master_graph()
 
 
@@ -124,9 +126,29 @@ async def run_proposal_to_plan(
     )
 
 
-@router.post("/review/run", dependencies=[Depends(require_internal_key)])
-async def run_review_placeholder(payload: GraphRunRequest) -> dict:
-    return _placeholder("review_graph", payload)
+@router.post("/review/run", response_model=GraphRunResponse, dependencies=[Depends(require_internal_key)])
+async def run_review(payload: GraphRunRequest) -> GraphRunResponse:
+    state = {
+        "task_id": str(payload.task_id) if payload.task_id else None,
+        "chain_type": payload.chain_type or "postclose_review",
+        "metadata": payload.metadata,
+        "request_id": str(uuid4()),
+        "actor": "api-service",
+        "graph_name": "review_graph",
+        "messages": [],
+    }
+    result = review_graph.invoke(state)
+    return GraphRunResponse(
+        graph_name="review_graph",
+        status=result.get("status", "failed"),
+        requires_human=False,
+        review=result.get("review"),
+        resolved_profile=result.get("resolved_profile"),
+        archive_ref=_last_archive_ref(result),
+        archive_refs=result.get("archive_refs", []),
+        messages=result.get("messages", []),
+        finished_at=datetime.now(timezone.utc),
+    )
 
 
 @router.post("/master/run", dependencies=[Depends(require_internal_key)])

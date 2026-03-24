@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from libs.contracts.event import EventNormalized
 from libs.contracts.proposal import ProposalFinal
 from libs.contracts.research import ResearchReport
-from libs.contracts.review import ReviewRecord
+from libs.contracts.review import PostcloseReview, ReviewRecord
 from libs.contracts.strategy import Strategy
 from libs.contracts.trading import ExecutionRecord, TradingPlan
 from libs.db.models import (
@@ -293,19 +293,23 @@ def persist_execution_record(db: Session, execution_data: dict) -> ExecutionReco
     record.action_type = str(execution_data.get("action_type", ""))
     record.recorded_by = str(execution_data.get("recorded_by", ""))
     record.notes = execution_data.get("notes")
-    record.result_json = execution_data.get("result", {})
+    result = dict(execution_data.get("result", {}) or {})
+    result.setdefault("evidence_source", str(execution_data.get("evidence_source", "manual")))
+    record.result_json = result
     return record
 
 
 def execution_record_model_to_contract(record: ExecutionRecordModel) -> ExecutionRecord:
+    result = record.result_json or {}
     return ExecutionRecord(
         id=record.id,
         trading_plan_id=record.trading_plan_id,
         task_id=record.task_id,
         action_type=record.action_type,
+        evidence_source=str(result.get("evidence_source", "manual")),
         recorded_by=record.recorded_by,
         notes=record.notes,
-        result=record.result_json or {},
+        result=result,
         created_at=record.created_at or datetime.now(timezone.utc),
     )
 
@@ -346,3 +350,20 @@ def review_model_to_contract(review: ReviewModel) -> ReviewRecord:
         score=to_float(review.score) if review.score is not None else None,
         created_at=review.created_at or datetime.now(timezone.utc),
     )
+
+
+def postclose_review_to_review_record(review_data: dict) -> dict:
+    return {
+        "id": review_data.get("id"),
+        "object_type": "trading_plan",
+        "object_id": review_data.get("trading_plan_id"),
+        "reviewer_type": review_data.get("reviewer_type", "agent"),
+        "reviewer_name": review_data.get("reviewer_name", "review_graph"),
+        "decision": review_data.get("decision", "pass"),
+        "comments": review_data.get("summary"),
+        "score": review_data.get("score"),
+    }
+
+
+def review_payload_to_contract(review_data: dict) -> PostcloseReview:
+    return PostcloseReview.model_validate(review_data)

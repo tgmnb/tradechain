@@ -32,6 +32,7 @@ async def create_execution_record(
             "trading_plan_id": str(payload.trading_plan_id),
             "task_id": str(payload.task_id) if payload.task_id else None,
             "action_type": payload.action_type,
+            "evidence_source": payload.evidence_source,
             "recorded_by": payload.recorded_by,
             "notes": payload.notes,
             "result": payload.result,
