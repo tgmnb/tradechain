@@ -12,10 +12,10 @@ from libs.contracts.graph import GraphRunRequest, GraphRunResponse
 from libs.contracts.proposal import ProposalDraft, ProposalDraftRequest, ProposalFinal
 from libs.contracts.registry import ResolvedAgentProfile, SkillManifest, SoulManifest
 from libs.contracts.research import ResearchReport, ResearchReportDraftRequest
-from libs.contracts.review import ReviewRecord
+from libs.contracts.review import PostcloseReview, ReviewRecord
 from libs.contracts.strategy import Strategy, StrategyDraftRequest
 from libs.contracts.task import TaskCreate, TaskRead
-from libs.contracts.trading import ExecutionRecord, TradingPlan, TradingPlanDraftRequest
+from libs.contracts.trading import ExecutionRecord, ExecutionRecordCreateRequest, TradingPlan, TradingPlanDraftRequest
 
 MODELS = {
     "TaskCreate": TaskCreate,
@@ -25,6 +25,7 @@ MODELS = {
     "ProposalDraftRequest": ProposalDraftRequest,
     "ProposalDraft": ProposalDraft,
     "ProposalFinal": ProposalFinal,
+    "PostcloseReview": PostcloseReview,
     "ReviewRecord": ReviewRecord,
     "ArchiveCreate": ArchiveCreate,
     "ArchiveRef": ArchiveRef,
@@ -39,6 +40,7 @@ MODELS = {
     "Strategy": Strategy,
     "TradingPlanDraftRequest": TradingPlanDraftRequest,
     "TradingPlan": TradingPlan,
+    "ExecutionRecordCreateRequest": ExecutionRecordCreateRequest,
     "ExecutionRecord": ExecutionRecord,
 }
 
