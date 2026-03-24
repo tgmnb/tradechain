@@ -349,6 +349,15 @@ async def test_gateway_slash_help_and_politburo_chat_split() -> None:
 
 @pytest.mark.anyio
 async def test_politburo_research_query_prefers_web_research() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    agent_api.db_session_factory = TestingSessionLocal
     transport = httpx.ASGITransport(app=app)
     headers = {"X-API-Key": "external-dev-key"}
 
@@ -379,6 +388,9 @@ async def test_politburo_research_query_prefers_web_research() -> None:
             )
     finally:
         agent_api.run_web_research_workflow = original_run_web_research
+        agent_api.db_session_factory = agent_api.SessionLocal
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
 
     assert response.status_code == 200
     assert response.json()["route"] == "web_research"
