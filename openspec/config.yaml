@@ -1,0 +1,18 @@
+schema: spec-driven
+context: |
+  Tech stack: Python 3.12 monorepo with FastAPI services, LangGraph workflows,
+  PostgreSQL, Redis, MinIO, Qdrant, n8n, and Discord bot integration.
+  Domain: AI-assisted investment research and workflow orchestration for China
+  policy, macro, and strategy analysis.
+  Conventions: prefer incremental changes, keep specs implementation-neutral,
+  and separate "current runnable baseline" from "next delivery wave".
+  Current state: intel_update and daily_preopen are runnable; intraday_watch,
+  postclose_review, and nightly_improvement are partial or placeholder flows.
+rules:
+  proposal:
+    - Keep the proposal focused on roadmap intent, sequencing, and impact.
+    - Name capabilities in kebab-case and avoid implementation-only changes.
+  design:
+    - Explain why the delivery sequence is chosen and which dependencies gate it.
+  tasks:
+    - Group tasks by delivery wave and make each checkbox verifiable.

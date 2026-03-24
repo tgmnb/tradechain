@@ -18,6 +18,7 @@ dist/
 coverage.xml
 .coverage
 htmlcov/
+.local/
 
 # Environment and secrets
 .env
