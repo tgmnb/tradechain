@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from apps.api_service.app.api import agent as agent_api
 from apps.api_service.app.api.execution_records import create_execution_record
+from apps.api_service.app.api.reviews import get_latest_review, list_reviews_by_object
 from apps.api_service.app.api.workflows import run_postclose_review
 from apps.api_service.app.api.workflows import run_intel_update
 from apps.api_service.app.api.workflows import run_major_task
@@ -230,6 +231,45 @@ async def test_postclose_review_requires_execution_evidence_when_plan_exists() -
 
     assert response["status"] == "blocked"
     assert response["reason"] == "execution_records_required"
+
+
+@pytest.mark.anyio
+async def test_reviews_api_reads_latest_and_by_object() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    object_id = uuid4()
+    with TestingSessionLocal() as db:
+        db.add(
+            ReviewModel(
+                object_type="trading_plan",
+                object_id=object_id,
+                reviewer_type="agent",
+                reviewer_name="review_graph",
+                decision="pass",
+                comments="review summary",
+                score=88,
+            )
+        )
+        db.commit()
+
+    try:
+        with TestingSessionLocal() as db:
+            latest = await get_latest_review(db=db)
+            by_object = await list_reviews_by_object("trading_plan", object_id, db=db)
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    assert latest.object_type == "trading_plan"
+    assert latest.object_id == object_id
+    assert len(by_object) == 1
+    assert by_object[0].reviewer_name == "review_graph"
 
 
 @pytest.mark.anyio

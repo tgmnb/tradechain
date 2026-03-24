@@ -8,6 +8,7 @@ from apps.api_service.app.api import (
     proposals,
     registry,
     research_reports,
+    reviews,
     strategies,
     tasks,
     trading_plans,
@@ -24,6 +25,7 @@ app.include_router(health.router)
 app.include_router(tasks.router)
 app.include_router(events.router)
 app.include_router(proposals.router)
+app.include_router(reviews.router)
 app.include_router(registry.router)
 app.include_router(research_reports.router)
 app.include_router(strategies.router)
