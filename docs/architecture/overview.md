@@ -12,9 +12,9 @@ Current baseline now supports two runnable minimum chains:
 - `major_task -> politburo intake -> NPC review -> state_council entry -> proposal/research/strategy/plan pipeline`
   governance output is now written back into `task.context_json`, mirrored into the `reviews` table as an NPC review record, and governance rejection can move the task into `needs_human`
 
-It also now supports one real precondition for the next workflow stage:
+It also now supports one baseline review loop beyond planning:
 
-- `Trading plan -> Execution record intake -> postclose_review placeholder hand-off`
+- `Trading plan -> Execution record intake -> postclose_review baseline review -> Archive`
 
 ## Delivery Waves
 
@@ -35,7 +35,7 @@ Current workflow readiness is:
 - `major_task`: runnable baseline, but still depends on the same downstream planning quality and governance calibration as the proposal/planning stack
 - `policy_watch`: runnable local research path, but still operationally coupled to API-service runtime and host proxy assumptions
 - `intraday_watch`: partial, blocked on real-time market data and trigger logic
-- `postclose_review`: partial, entrypoint exists and placeholder hand-off works, but real execution evidence ingestion and review-node logic remain incomplete
+- `postclose_review`: runnable baseline, with structured review output, archive hand-off, and explicit no-evidence blocking when only a trading plan exists
 - `nightly_improvement`: blocked on scoring, ticket generation, and approval-loop implementation
 
 Readiness for each workflow should be evaluated using three gates:

@@ -15,9 +15,11 @@
 
 仍未实装：
 - `intraday_watch` 需要实时行情和触发逻辑
-- `postclose_review` 需要 execution records 的真实回流
 - `nightly_improvement` 需要评分、工单、审批链
 - Discord / n8n 在部署环境中的真实联调
+
+已补到 baseline：
+- `postclose_review` 已具备最小可运行复盘链，能够基于 `trading_plan + execution_records` 生成结构化 review 并归档
 
 ## 当前交付波次
 
@@ -42,7 +44,7 @@
 - `major_task`：runnable baseline
 - `policy_watch`：runnable baseline
 - `intraday_watch`：partial
-- `postclose_review`：partial
+- `postclose_review`：runnable baseline
 - `nightly_improvement`：blocked
 
 对应缺口：
@@ -51,14 +53,14 @@
   - 缺实时行情源
   - 缺触发与节流逻辑
 - `postclose_review`
-  - 缺 execution record 的真实采集入口
-  - 缺 review graph 的实际节点实现
+  - 仍缺 execution record 的真实自动采集入口
+  - 当前 review graph 仍是 baseline heuristic，总结与评分还不够深
 - `nightly_improvement`
   - 缺评分数据
   - 缺工单生成链
   - 缺审批闭环
 
-这三条链在补齐真实上下游之前，都不应算作“已交付”。
+其中 `intraday_watch` 和 `nightly_improvement` 仍不能算作“已交付”；`postclose_review` 则已经进入可运行 baseline，但还没到生产级。
 
 ## 这轮新增内容
 
@@ -123,24 +125,25 @@
 - `MiniMax` 结构化解析补了 `<think>` 清洗和首个合法 JSON 提取，避免模型前置思考文本把结果打坏
 - API 内部调用超时补成了兼容配置，避免 planning 链在 `daily_preopen` 上提前超时
 
-当前本地可视为已验证的内容：
+当前本地可视为已验证或已补到 baseline 的内容：
 
 - `intel_update`
 - `daily_preopen`
 - `politburo direct reply`
 - `Discord plain message -> politburo -> direct reply / intel_update`
-- `execution_record intake -> postclose_review placeholder`
+- `execution_record intake -> postclose_review baseline review`
 
-## 2026-03-14 执行记录补口
+## 2026-03-24 postclose review baseline 补口
 
-为继续推进 `postclose_review`，这轮又补了一层最小数据闭环：
+为继续推进 `postclose_review`，这轮把占位链路补到了 baseline 可运行状态：
 
-- 新增 `execution_records` API，可记录交易计划对应的执行动作
-- `postclose_review` 不再是纯静态 blocked：无计划时会明确返回 `no_trading_plan`，有 execution records 时会调用 `review_graph` placeholder
-- 回归测试覆盖了 `execution_record` 创建和 `postclose_review` 的占位交接路径
+- `execution_records` 现在带最小 `evidence_source` 字段，可区分手工录入和未来自动回流
+- `review_graph` 已从 placeholder 升级为最小可运行节点链
+- `postclose_review` 现在会产出结构化 review payload，写入 review 记录，并归档 review payload
+- 测试已补到“无 evidence 阻塞”和“有 evidence 生成 review”的路径
 
 这意味着当前真正还缺的不是“有没有入口”，而是：
 
-- execution record 的真实采集来源
-- review graph 的实际节点实现
+- execution record 的真实自动采集来源
+- 更深入的 review 比较逻辑和评分标准
 - nightly evaluation / approval 数据链
