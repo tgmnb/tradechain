@@ -1,12 +1,15 @@
+from libs.contracts.improvement import AgentScore, ImprovementTicket
 from libs.contracts.archive import ArchiveCreate, ArchiveRef
 from libs.contracts.event import EventIn, EventNormalized
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse, GraphState
 from libs.contracts.proposal import ProposalDraft, ProposalDraftRequest, ProposalFinal
 from libs.contracts.review import PostcloseReview, ReviewRecord
+from libs.contracts.watch import WatchObservation
 from libs.contracts.task import TaskCreate, TaskRead
 from libs.contracts.trading import ExecutionRecord, ExecutionRecordCreateRequest, TradingPlan
 
 __all__ = [
+    "AgentScore",
     "ArchiveCreate",
     "ArchiveRef",
     "EventIn",
@@ -14,6 +17,7 @@ __all__ = [
     "GraphRunRequest",
     "GraphRunResponse",
     "GraphState",
+    "ImprovementTicket",
     "ProposalDraft",
     "ProposalDraftRequest",
     "ProposalFinal",
@@ -24,4 +28,5 @@ __all__ = [
     "TradingPlan",
     "ExecutionRecord",
     "ExecutionRecordCreateRequest",
+    "WatchObservation",
 ]

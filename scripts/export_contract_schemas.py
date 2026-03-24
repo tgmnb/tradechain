@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 from libs.contracts.archive import ArchiveCreate, ArchiveRef
 from libs.contracts.event import EventIn, EventNormalized
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse
+from libs.contracts.improvement import AgentScore, ImprovementTicket
 from libs.contracts.proposal import ProposalDraft, ProposalDraftRequest, ProposalFinal
 from libs.contracts.registry import ResolvedAgentProfile, SkillManifest, SoulManifest
 from libs.contracts.research import ResearchReport, ResearchReportDraftRequest
@@ -16,12 +17,15 @@ from libs.contracts.review import PostcloseReview, ReviewRecord
 from libs.contracts.strategy import Strategy, StrategyDraftRequest
 from libs.contracts.task import TaskCreate, TaskRead
 from libs.contracts.trading import ExecutionRecord, ExecutionRecordCreateRequest, TradingPlan, TradingPlanDraftRequest
+from libs.contracts.watch import WatchObservation
 
 MODELS = {
     "TaskCreate": TaskCreate,
     "TaskRead": TaskRead,
+    "AgentScore": AgentScore,
     "EventIn": EventIn,
     "EventNormalized": EventNormalized,
+    "ImprovementTicket": ImprovementTicket,
     "ProposalDraftRequest": ProposalDraftRequest,
     "ProposalDraft": ProposalDraft,
     "ProposalFinal": ProposalFinal,
@@ -40,6 +44,7 @@ MODELS = {
     "Strategy": Strategy,
     "TradingPlanDraftRequest": TradingPlanDraftRequest,
     "TradingPlan": TradingPlan,
+    "WatchObservation": WatchObservation,
     "ExecutionRecordCreateRequest": ExecutionRecordCreateRequest,
     "ExecutionRecord": ExecutionRecord,
 }
