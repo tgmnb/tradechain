@@ -5,14 +5,17 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from libs.contracts.event import EventNormalized
+from libs.contracts.improvement import AgentScore, ImprovementTicket
 from libs.contracts.proposal import ProposalFinal
 from libs.contracts.research import ResearchReport
 from libs.contracts.review import PostcloseReview, ReviewRecord
 from libs.contracts.strategy import Strategy
 from libs.contracts.trading import ExecutionRecord, TradingPlan
 from libs.db.models import (
+    AgentScoreModel,
     EventModel,
     ExecutionRecordModel,
+    ImprovementTicketModel,
     ProposalModel,
     ResearchReportModel,
     ReviewModel,
@@ -367,3 +370,39 @@ def postclose_review_to_review_record(review_data: dict) -> dict:
 
 def review_payload_to_contract(review_data: dict) -> PostcloseReview:
     return PostcloseReview.model_validate(review_data)
+
+
+def agent_score_model_to_contract(score: AgentScoreModel) -> AgentScore:
+    return AgentScore(
+        id=score.id,
+        agent_name=score.agent_name,
+        period_start=score.period_start,
+        period_end=score.period_end,
+        win_rate=to_float(score.win_rate) if score.win_rate is not None else None,
+        precision_score=to_float(score.precision_score) if score.precision_score is not None else None,
+        timeliness_score=to_float(score.timeliness_score) if score.timeliness_score is not None else None,
+        contribution_score=to_float(score.contribution_score) if score.contribution_score is not None else None,
+        stability_score=to_float(score.stability_score) if score.stability_score is not None else None,
+        total_score=to_float(score.total_score) if score.total_score is not None else None,
+        detail=score.detail_json or {},
+        created_at=score.created_at or datetime.now(timezone.utc),
+    )
+
+
+def improvement_ticket_model_to_contract(ticket: ImprovementTicketModel) -> ImprovementTicket:
+    return ImprovementTicket(
+        id=ticket.id,
+        target_type=ticket.target_type,
+        target_name=ticket.target_name,
+        source_period_start=ticket.source_period_start,
+        source_period_end=ticket.source_period_end,
+        issue_summary=ticket.issue_summary or "",
+        impact_description=ticket.impact_description or "",
+        root_cause=ticket.root_cause or {},
+        proposed_fix=ticket.proposed_fix or {},
+        status=ticket.status,
+        approved_by=ticket.approved_by,
+        metadata={},
+        created_at=ticket.created_at or datetime.now(timezone.utc),
+        updated_at=ticket.updated_at or datetime.now(timezone.utc),
+    )

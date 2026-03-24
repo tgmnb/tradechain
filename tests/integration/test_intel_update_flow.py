@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from apps.api_service.app.api import agent as agent_api
 from apps.api_service.app.api.execution_records import create_execution_record
+from apps.api_service.app.api.improvement import get_latest_agent_score, get_latest_improvement_ticket
 from apps.api_service.app.api.reviews import get_latest_review, list_reviews_by_object
 from apps.api_service.app.api.workflows import run_postclose_review
 from apps.api_service.app.api.workflows import run_intel_update
@@ -17,7 +18,7 @@ from apps.api_service.app.main import app
 from apps.api_service.app.services.internal_clients import internal_clients
 from libs.contracts.trading import ExecutionRecordCreateRequest
 from libs.db.base import Base
-from libs.db.models import EventModel, ReviewModel, TaskModel, TradingPlanModel
+from libs.db.models import AgentScoreModel, EventModel, ImprovementTicketModel, ReviewModel, TaskModel, TradingPlanModel
 
 
 @pytest.mark.anyio
@@ -270,6 +271,55 @@ async def test_reviews_api_reads_latest_and_by_object() -> None:
     assert latest.object_id == object_id
     assert len(by_object) == 1
     assert by_object[0].reviewer_name == "review_graph"
+
+
+@pytest.mark.anyio
+async def test_improvement_api_reads_latest_score_and_ticket() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    with TestingSessionLocal() as db:
+        db.add(
+            AgentScoreModel(
+                agent_name="review_graph",
+                period_start=date(2026, 3, 20),
+                period_end=date(2026, 3, 24),
+                total_score=81,
+                detail_json={"source": "nightly"},
+            )
+        )
+        db.add(
+            ImprovementTicketModel(
+                target_type="skill",
+                target_name="execution_compare_skill",
+                source_period_start=date(2026, 3, 20),
+                source_period_end=date(2026, 3, 24),
+                issue_summary="Need better deviation grouping",
+                impact_description="Review summaries are too shallow",
+                root_cause={"items": ["heuristic only"]},
+                proposed_fix={"items": ["add stronger comparison"]},
+                status="pending_approval",
+            )
+        )
+        db.commit()
+
+    try:
+        with TestingSessionLocal() as db:
+            latest_score = await get_latest_agent_score(db=db)
+            latest_ticket = await get_latest_improvement_ticket(db=db)
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    assert latest_score.agent_name == "review_graph"
+    assert latest_score.total_score == 81
+    assert latest_ticket.target_name == "execution_compare_skill"
+    assert latest_ticket.status == "pending_approval"
 
 
 @pytest.mark.anyio
