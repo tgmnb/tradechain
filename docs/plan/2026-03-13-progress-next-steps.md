@@ -19,6 +19,47 @@
 - `nightly_improvement` 需要评分、工单、审批链
 - Discord / n8n 在部署环境中的真实联调
 
+## 当前交付波次
+
+基于当前仓库状态，后续不再适合继续沿用最早的 Sprint 1 / Sprint 2 说法，更准确的划分是三段交付波次：
+
+- Wave 1 `基线已跑通`
+  - 包含：`intel_update`、`daily_preopen`、`major_task`、`policy_watch`、politburo direct reply
+  - 判定标准：本地/开发环境能跑通最小链路，有明确 API 或 bot 入口
+- Wave 2 `工作流补全`
+  - 目标：补齐 `intraday_watch`、`postclose_review`、`nightly_improvement`
+  - 判定标准：不是只有入口，而是具备真实输入、真实输出和可复用链路
+- Wave 3 `平台加固`
+  - 目标：为已可运行链路补齐 smoke / integration coverage、可观测性、部署校验和数据回流
+  - 判定标准：可以在接近生产的环境下重复验证，而不是仅靠本地人工试跑
+
+## Workflow Readiness 重新归类
+
+按“是否真正可运行”而不是“是否已有 endpoint / placeholder”重新看，当前状态应当是：
+
+- `intel_update`：runnable
+- `daily_preopen`：runnable
+- `major_task`：runnable baseline
+- `policy_watch`：runnable baseline
+- `intraday_watch`：partial
+- `postclose_review`：partial
+- `nightly_improvement`：blocked
+
+对应缺口：
+
+- `intraday_watch`
+  - 缺实时行情源
+  - 缺触发与节流逻辑
+- `postclose_review`
+  - 缺 execution record 的真实采集入口
+  - 缺 review graph 的实际节点实现
+- `nightly_improvement`
+  - 缺评分数据
+  - 缺工单生成链
+  - 缺审批闭环
+
+这三条链在补齐真实上下游之前，都不应算作“已交付”。
+
 ## 这轮新增内容
 
 为支持你专注 `soul` 和 `skill` 内容建设，这轮优先补了框架层：

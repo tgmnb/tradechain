@@ -16,6 +16,34 @@ It also now supports one real precondition for the next workflow stage:
 
 - `Trading plan -> Execution record intake -> postclose_review placeholder hand-off`
 
+## Delivery Waves
+
+The project is now best understood as a wave-based delivery plan instead of the older Sprint 1-2 label:
+
+- Wave 1 `Baseline stabilized`: `intel_update`, `daily_preopen`, politburo direct reply, `major_task`, and `policy_watch` are runnable in local/dev conditions.
+- Wave 2 `Workflow completion`: `intraday_watch`, `postclose_review`, and `nightly_improvement` move from placeholder or partial status to chains with real upstream inputs and downstream outputs.
+- Wave 3 `Platform hardening`: runnable chains gain repeatable smoke/integration coverage, cross-service observability, provider/deployment checks, and stronger production-readiness gates.
+
+Progress to the next wave should be decided by workflow readiness and operational evidence, not by route presence alone.
+
+## Workflow Readiness
+
+Current workflow readiness is:
+
+- `intel_update`: runnable, with event -> proposal -> archive loop available through API and Discord hand-off
+- `daily_preopen`: runnable, with proposal -> research -> strategy -> trading plan loop available through the current planning path
+- `major_task`: runnable baseline, but still depends on the same downstream planning quality and governance calibration as the proposal/planning stack
+- `policy_watch`: runnable local research path, but still operationally coupled to API-service runtime and host proxy assumptions
+- `intraday_watch`: partial, blocked on real-time market data and trigger logic
+- `postclose_review`: partial, entrypoint exists and placeholder hand-off works, but real execution evidence ingestion and review-node logic remain incomplete
+- `nightly_improvement`: blocked on scoring, ticket generation, and approval-loop implementation
+
+Readiness for each workflow should be evaluated using three gates:
+
+- real upstream input availability
+- meaningful downstream artifact or decision output
+- operational invocation path through API, Discord, scheduler, or internal graph routing
+
 ## Components
 
 - `api-service`: external API gateway, registry read APIs, politburo direct-reply API, and workflow hand-off
