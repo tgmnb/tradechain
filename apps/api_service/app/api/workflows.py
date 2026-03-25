@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import get_db
+from apps.api_service.app.services.intraday_watch_service import run_intraday_watch as execute_intraday_watch
 from apps.api_service.app.services.internal_clients import internal_clients
 from apps.api_service.app.services.policy_crawl_service import run_policy_crawl
 from apps.api_service.app.services.web_research_service import run_web_research
@@ -27,6 +28,7 @@ from apps.api_service.app.services.runtime_objects import (
 from apps.api_service.app.services.runtime_profiles import planning_profile_for, proposal_profile_for
 from libs.contracts.enums import TaskStatus
 from libs.contracts.event import EventIn, build_event_dedup_key
+from libs.contracts.watch import IntradayWatchRequest
 from libs.db.models import EventModel, ExecutionRecordModel, ProposalModel, ReviewModel, TaskModel, TradingPlanModel
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"], dependencies=[Depends(require_api_key)])
@@ -314,12 +316,8 @@ async def run_daily_preopen(request: Request, db: Session = Depends(get_db)) -> 
 
 
 @router.post("/intraday-watch/run")
-async def run_intraday_watch_placeholder() -> dict:
-    return {
-        "status": "blocked",
-        "reason": "live_market_data_required",
-        "message": "intraday-watch needs live market data, plan triggers, and deployment-side scheduling before runtime alerts can be enabled.",
-    }
+async def run_intraday_watch_workflow(payload: IntradayWatchRequest | None = None) -> dict:
+    return execute_intraday_watch(payload)
 
 
 @router.post("/postclose-review/run")

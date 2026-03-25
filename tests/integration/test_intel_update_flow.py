@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
 
 import httpx
@@ -101,6 +101,104 @@ async def test_placeholder_workflows_report_current_blockers() -> None:
     assert nightly.status_code == 200
     assert nightly.json()["reason"] == "evaluation_pipeline_required"
     assert "improvement_ticket_skill" in nightly.json()["message"]
+
+
+@pytest.mark.anyio
+async def test_intraday_watch_requires_controlled_input() -> None:
+    transport = httpx.ASGITransport(app=app)
+    headers = {"X-API-Key": "external-dev-key"}
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post("/v1/workflows/intraday-watch/run", headers=headers, json={})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "blocked"
+    assert response.json()["reason"] == "no_market_input"
+
+
+@pytest.mark.anyio
+async def test_intraday_watch_emits_structured_observation() -> None:
+    transport = httpx.ASGITransport(app=app)
+    headers = {"X-API-Key": "external-dev-key"}
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post(
+            "/v1/workflows/intraday-watch/run",
+            headers=headers,
+            json={
+                "input_mode": "mock_replay",
+                "snapshots": [
+                    {
+                        "asset": "IF_MAIN",
+                        "observed_at": datetime(2026, 3, 25, 9, 35, tzinfo=timezone.utc).isoformat(),
+                        "last_price": 103.2,
+                        "prev_close": 100.0,
+                        "session_high": 103.2,
+                        "session_low": 100.4,
+                        "volume": 2600,
+                        "average_volume": 1000,
+                    }
+                ],
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == "success"
+    assert body["observation_count"] == 2
+    assert {item["trigger_type"] for item in body["observations"]} == {"price_breakout", "volume_spike"}
+    price_observation = next(item for item in body["observations"] if item["trigger_type"] == "price_breakout")
+    assert price_observation["asset_scope"] == ["IF_MAIN"]
+    assert price_observation["follow_up_action"] == "research"
+    assert "research" in price_observation["routing_targets"]
+    assert price_observation["dedup_key"] == "IF_MAIN:price_breakout:up"
+
+
+@pytest.mark.anyio
+async def test_intraday_watch_suppresses_duplicate_trigger_within_window() -> None:
+    transport = httpx.ASGITransport(app=app)
+    headers = {"X-API-Key": "external-dev-key"}
+    first_seen = datetime(2026, 3, 25, 9, 35, tzinfo=timezone.utc)
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post(
+            "/v1/workflows/intraday-watch/run",
+            headers=headers,
+            json={
+                "input_mode": "mock_replay",
+                "suppression_window_minutes": 15,
+                "snapshots": [
+                    {
+                        "asset": "IF_MAIN",
+                        "observed_at": first_seen.isoformat(),
+                        "last_price": 103.0,
+                        "prev_close": 100.0,
+                        "session_high": 103.0,
+                        "session_low": 100.6,
+                        "volume": 1400,
+                        "average_volume": 1000,
+                    },
+                    {
+                        "asset": "IF_MAIN",
+                        "observed_at": (first_seen + timedelta(minutes=10)).isoformat(),
+                        "last_price": 103.4,
+                        "prev_close": 100.0,
+                        "session_high": 103.4,
+                        "session_low": 100.8,
+                        "volume": 1500,
+                        "average_volume": 1000,
+                    },
+                ],
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == "success"
+    assert body["observation_count"] == 1
+    assert body["suppressed_count"] == 1
+    assert body["observations"][0]["dedup_key"] == "IF_MAIN:price_breakout:up"
+    assert body["suppressed"][0]["dedup_key"] == "IF_MAIN:price_breakout:up"
 
 
 @pytest.mark.anyio

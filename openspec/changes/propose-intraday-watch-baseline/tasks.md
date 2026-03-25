@@ -15,5 +15,5 @@
 
 ## 4. Baseline Implementation
 
-- [ ] 4.1 Replace the current blocked placeholder with a baseline watch execution path.
-- [ ] 4.2 Add tests covering no-input, trigger, and duplicate-suppression paths.
+- [x] 4.1 Replace the current blocked placeholder with a baseline watch execution path.
+- [x] 4.2 Add tests covering no-input, trigger, and duplicate-suppression paths.
