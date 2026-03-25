@@ -41,6 +41,8 @@ Validated local commands:
 - Daily preopen chain: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/daily-preopen/run -H 'X-API-Key: external-dev-key'`
 - Web research: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/web-research/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"query":"日本央行最新政策","max_results":5}'`
 - Policy crawl: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/policy-crawl/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"limit_per_source": 5}'`
+- Intraday watch baseline: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/intraday-watch/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"input_mode":"mock_replay","snapshots":[{"asset":"IF_MAIN","observed_at":"2026-03-25T09:35:00Z","last_price":103.2,"prev_close":100.0,"session_high":103.2,"session_low":100.4,"volume":2600,"average_volume":1000}]}'`
+- Nightly improvement baseline: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/nightly-improvement/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"minimum_score_threshold":75,"approval_role":"improvement_officer"}'`
 - Registry view: `curl --noproxy '*' http://127.0.0.1:8000/v1/registry/souls -H 'X-API-Key: external-dev-key'`
 - Politburo direct reply: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/agent/discord-message -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"text":"你是谁","user_name":"local","user_id":"local","channel_id":"local","guild_id":"local"}'`
 
@@ -74,7 +76,8 @@ These checks still need the deployment environment or external connectivity:
 - Real `MiniMax` connectivity and proxy behavior
 - Discord bot command sync and channel restrictions
 - n8n import plus scheduled execution
-- Live market data / intraday watch behavior
+- Live market data ownership and alert routing for `intraday_watch`
+- Approval actor integration and long-window score quality for `nightly_improvement`
 - Docker Compose execution in restricted sandbox environments that cannot join the host mount namespace
 
 ## Discord bot

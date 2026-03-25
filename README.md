@@ -227,11 +227,11 @@ Relevant env vars:
 Import these files from `workflows/n8n/`:
 
 - `intel_update.json` (runnable minimum)
-- `major_task.json` (placeholder)
-- `daily_preopen.json` (placeholder)
-- `intraday_watch.json` (placeholder)
-- `postclose_review.json` (placeholder)
-- `nightly_improvement.json` (placeholder)
+- `major_task.json` (runnable baseline)
+- `daily_preopen.json` (runnable baseline)
+- `intraday_watch.json` (runnable baseline with controlled `mock_replay` input)
+- `postclose_review.json` (runnable baseline)
+- `nightly_improvement.json` (runnable baseline with historical score aggregation)
 
 ## Discord slash commands
 
@@ -250,7 +250,11 @@ Plain channel messages also flow through a top-level politburo dispatcher:
 
 ## Testing status
 
-Test files and scenarios are provided under `tests/`, but this delivery intentionally does **not** execute integration/regression runs yet.
+Current runnable chains now have exercised integration/regression coverage in `tests/`, including:
+
+- `agent` gateway routing and direct-reply behavior
+- `major_task`, `postclose_review`, `intraday_watch`, and `nightly_improvement` workflow baselines
+- contract/schema export and registry loading regression checks
 
 ## OpenSpec planning
 
@@ -281,10 +285,12 @@ Implemented now:
 - Event -> proposal minimal loop with archive + Discord entry
 - Proposal -> research -> strategy -> trading plan planning loop
 - Postclose review baseline with structured review output and archive hand-off
+- Intraday watch baseline with controlled snapshots, trigger evaluation, and structured observations
+- Nightly improvement baseline with historical score aggregation, structured tickets, and approval-state transitions
 
 Intentionally deferred:
 
 - Real news/market data connectors
-- Full intraday watch implementation with live market data
+- Production-grade intraday watch with live market data ownership
 - Real-time trading execution and broker connectivity
-- Full evaluation/improvement automation
+- Full evaluation/improvement automation and non-baseline approval tooling

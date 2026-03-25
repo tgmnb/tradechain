@@ -6,8 +6,10 @@ context: |
   policy, macro, and strategy analysis.
   Conventions: prefer incremental changes, keep specs implementation-neutral,
   and separate "current runnable baseline" from "next delivery wave".
-  Current state: intel_update and daily_preopen are runnable; intraday_watch,
-  postclose_review, and nightly_improvement are partial or placeholder flows.
+  Current state: intel_update, daily_preopen, major_task, policy_watch,
+  postclose_review, intraday_watch baseline, and nightly_improvement baseline
+  are runnable; the next delivery wave is platform hardening and production
+  readiness rather than placeholder replacement.
 rules:
   proposal:
     - Keep the proposal focused on roadmap intent, sequencing, and impact.

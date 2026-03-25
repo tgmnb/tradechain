@@ -1,5 +1,7 @@
 # 2026-03-24 Wave 2 工作流补全计划
 
+更新于 2026-03-25：本计划中的三条链路都已进入 runnable baseline，本文保留为 Wave 2 设计记录，并作为 Wave 3 平台加固的输入。
+
 这份文档只覆盖 Wave 2，即把当前仍处于 `partial / blocked` 状态的三条链路补成“有真实输入、有真实输出、能稳定复用”的工作流。
 
 ## 目标范围
@@ -20,34 +22,43 @@
 
 ### intraday_watch
 
-- 当前状态：`partial`
+- 当前状态：`runnable_baseline`
 - 已有基础：部门 / specialist / skill 结构已经预留，工作流位置已经预留
-- 主要缺口：
+- 已完成：
+  - `mock_replay` 受控输入
+  - 价格 / 波动 / 成交量触发规则
+  - throttle / dedup 抑制
+  - 标准化 watch observation 输出
+- 下一步缺口：
   - 缺实时或准实时行情输入
-  - 缺事件触发条件和节流规则
-  - 缺告警/观察结果的标准输出对象
+  - 缺 live alert ownership 和长期调度策略
 
 ### postclose_review
 
-- 当前状态：`partial`
+- 当前状态：`runnable_baseline`
 - 已有基础：
   - `trading_plan` 已存在
   - `execution_records` API 已存在
   - 无计划时已有 `no_trading_plan` 占位返回
   - 有记录时可 hand-off 到 `review_graph` placeholder
-- 主要缺口：
+- 已完成：
+  - `execution_records` 作为当前 baseline source-of-truth ingestion path
+  - 结构化 review 输出
+  - review 持久化与 archive hand-off
+- 下一步缺口：
   - execution record 仍主要依赖手工写入
-  - `review_graph` 还没有真实节点
-  - 缺标准化 review 输出和归档策略
+  - 还缺自动采集或 broker-side evidence adapter
 
 ### nightly_improvement
 
-- 当前状态：`blocked`
-- 已有基础：improvement specialist / skill 已预留，graph 接口已占位
-- 主要缺口：
-  - 缺评分输入
-  - 缺 improvement ticket 数据模型或标准产物
-  - 缺审批流和状态流转
+- 当前状态：`runnable_baseline`
+- 已完成：
+  - historical score aggregation baseline
+  - improvement ticket 标准产物
+  - `pending_approval -> approved/rejected -> applied` 状态流转
+- 下一步缺口：
+  - 缺更完整的 evaluation input
+  - 缺 bot / ops-friendly approval entry
 
 ## 推荐补全顺序
 
@@ -154,8 +165,8 @@ Wave 2 最先需要稳定下来的不是 prompt，而是输入输出对象。
 
 ## 下一步建议
 
-下一笔实现工作建议从 `postclose_review` 开始，优先做三件事：
+Wave 2 已完成，下一笔实现工作建议进入 Wave 3，优先做三件事：
 
-- 明确 execution evidence 的来源字段和最小约束
-- 设计 review 输出 contract
-- 把 `review_graph` 从 placeholder 升级为最小可运行节点链
+- 为跨服务 hand-off 增加更明确的 trace / observability 检查
+- 为 runnable workflows 增加更系统的 smoke / integration matrix
+- 补齐 live market data、execution evidence adapter、evaluation pipeline 这三条真实输入链

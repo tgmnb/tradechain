@@ -26,6 +26,8 @@
 ```bash
 ./scripts/openspec.sh show replan-project-roadmap
 ./scripts/openspec.sh show implement-postclose-review-baseline
+./scripts/openspec.sh show propose-intraday-watch-baseline
+./scripts/openspec.sh show propose-nightly-improvement-baseline
 ```
 
 校验某个 change：
@@ -33,6 +35,8 @@
 ```bash
 ./scripts/openspec.sh validate implement-postclose-review-baseline
 ./scripts/openspec.sh validate propose-intraday-watch-baseline
+./scripts/openspec.sh validate propose-nightly-improvement-baseline
+./scripts/openspec.sh validate replan-project-roadmap
 ```
 
 创建新的 change：
@@ -45,10 +49,10 @@
 
 按当前仓库状态，建议优先顺序是：
 
-1. `implement-postclose-review-baseline` 收尾与细化
-2. `propose-intraday-watch-baseline` 落地
-3. `propose-nightly-improvement-baseline` 落地
-4. 进入 Wave 3 平台加固
+1. 用 `replan-project-roadmap` 作为后续 proposal 的规划基线
+2. 在 follow-on changes 中分别补齐 workflow baseline
+3. 完成 Wave 3 平台加固与部署就绪检查
+4. 所有 follow-on work 落地后，再归档 roadmap change
 
 ## 使用约束
 
@@ -67,5 +71,6 @@
 因此本地验证优先顺序应当是：
 
 1. `./scripts/openspec.sh validate <change>`
-2. 语法级 `python3 -c "compile(...)"` 检查
-3. 在具备依赖的容器或完整开发环境中再跑 pytest / schema export
+2. `.venv/bin/python scripts/export_contract_schemas.py`
+3. `.venv/bin/pytest -q`
+4. 在具备依赖和网络的完整开发环境中再跑 Docker/外部连通性检查
