@@ -574,8 +574,16 @@ async def test_politburo_research_query_prefers_web_research() -> None:
         return {
             "status": "success",
             "query": payload.query,
+            "rewrite_strategy": "hint_rewrite",
             "result_count": 1,
-            "results": [{"title": "Japan policy", "url": "https://example.gov/policy", "excerpt": "Policy text"}],
+            "results": [
+                {
+                    "title": "Japan policy",
+                    "url": "https://example.gov/policy",
+                    "excerpt": "Policy text",
+                    "source_domain": "example.gov",
+                }
+            ],
             "summary": "围绕“日本央行最新政策”做了网页检索。",
         }
 
@@ -602,8 +610,65 @@ async def test_politburo_research_query_prefers_web_research() -> None:
         engine.dispose()
 
     assert response.status_code == 200
-    assert response.json()["route"] == "web_research"
-    assert "网页检索" in response.json()["summary"]
+    body = response.json()
+    assert body["route"] == "governed_dialogue"
+    assert "网页检索" not in body["summary"]
+    assert "example.gov" in body["summary"]
+    assert body["workflow"]["downstream_route"] == "web_research"
+
+
+@pytest.mark.anyio
+async def test_governed_dialogue_bad_case_avoids_raw_search_dump() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    agent_api.db_session_factory = TestingSessionLocal
+    transport = httpx.ASGITransport(app=app)
+    headers = {"X-API-Key": "external-dev-key"}
+
+    async def fake_run_web_research_workflow(payload):
+        return {
+            "status": "success",
+            "query": payload.query,
+            "rewrite_strategy": "hint_rewrite",
+            "result_count": 0,
+            "results": [],
+            "summary": "没有检索到与问题相关的可信网页结果。",
+        }
+
+    original_run_web_research = agent_api.run_web_research_workflow
+    agent_api.run_web_research_workflow = fake_run_web_research_workflow
+
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            response = await client.post(
+                "/v1/agent/discord-message",
+                headers=headers,
+                json={
+                    "text": "你研究一下，美国的加降息情况",
+                    "user_name": "tester",
+                    "user_id": "1",
+                    "channel_id": "1",
+                    "guild_id": "1",
+                },
+            )
+    finally:
+        agent_api.run_web_research_workflow = original_run_web_research
+        agent_api.db_session_factory = agent_api.SessionLocal
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["route"] == "governed_dialogue"
+    assert "Task `" not in body["summary"]
+    assert "result_count" not in body["summary"]
+    assert "不直接下结论" in body["summary"]
 
 
 @pytest.mark.anyio

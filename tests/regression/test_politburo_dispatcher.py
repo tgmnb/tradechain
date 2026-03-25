@@ -11,12 +11,12 @@ def test_dispatcher_routes_help_requests_to_direct_reply() -> None:
 def test_dispatcher_routes_research_requests_to_intel_update() -> None:
     decision = dispatch_discord_message("请帮我研究一下今天的宏观变化并给我一个提案")
 
-    assert decision.route == "intel_update"
+    assert decision.route == "governed_dialogue"
     assert decision.activate_chain is True
 
 
 def test_dispatcher_routes_web_search_requests_to_web_research() -> None:
     decision = dispatch_discord_message("帮我查一下今天日本央行最新政策消息")
 
-    assert decision.route == "web_research"
+    assert decision.route == "governed_dialogue"
     assert decision.activate_chain is True

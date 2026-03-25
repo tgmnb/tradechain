@@ -6,10 +6,10 @@
 
 ## 2. Flagship Dialogue Chain
 
-- [ ] 2.1 Replace keyword-only top-level routing with a governed task-clarification step for the politburo dialogue entry.
-- [ ] 2.2 Implement the staged dialogue execution path: clarification, downstream research delegation, evidence synthesis, and user reply generation.
-- [ ] 2.3 Ensure the final user response no longer exposes raw workflow route/task dumps when a governed answer can be synthesized.
-- [ ] 2.4 Add bounded fallback behavior for weak evidence, low-trust sources, and downstream execution failures.
+- [x] 2.1 Replace keyword-only top-level routing with a governed task-clarification step for the politburo dialogue entry.
+- [x] 2.2 Implement the staged dialogue execution path: clarification, downstream research delegation, evidence synthesis, and user reply generation.
+- [x] 2.3 Ensure the final user response no longer exposes raw workflow route/task dumps when a governed answer can be synthesized.
+- [x] 2.4 Add bounded fallback behavior for weak evidence, low-trust sources, and downstream execution failures.
 
 ## 3. Evaluation and Hardening
 

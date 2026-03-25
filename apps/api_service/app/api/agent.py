@@ -18,6 +18,8 @@ from apps.api_service.app.api.workflows import (
 )
 from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import SessionLocal
+from apps.api_service.app.services.dialogue_chain_service import build_evidence_bundle, clarify_dialogue_task, synthesize_governed_answer
+from apps.api_service.app.services.dialogue_runtime_service import dialogue_runtime_service
 from apps.api_service.app.services.politburo_responder import politburo_responder
 from libs.contracts.task import TaskCreate, TaskRead
 
@@ -161,6 +163,9 @@ async def handle_discord_message(
             ),
         )
 
+    if decision and decision.activate_chain and decision.route == "governed_dialogue":
+        return await _run_governed_dialogue(payload, request, decision_summary)
+
     with _db_session() as db:
         task = await create_task(
             TaskCreate(
@@ -254,3 +259,112 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
 
 def _db_session():
     return db_session_factory()
+
+
+async def _run_governed_dialogue(
+    payload: DiscordMessageRequest,
+    request: Request,
+    decision_summary: str,
+) -> DiscordMessageResponse:
+    clarified = clarify_dialogue_task(payload.text)
+    with _db_session() as db:
+        task, intent = dialogue_runtime_service.create_dialogue_task(
+            db,
+            payload={
+                "text": payload.text,
+                "user_name": payload.user_name,
+                "channel_id": payload.channel_id,
+                "guild_id": payload.guild_id,
+                "conversation_id": str(uuid4()),
+                "request_id": request.headers.get("X-Request-ID", str(uuid4())),
+                "topic_scope": clarified.topic_scope,
+                "constraints": clarified.constraints,
+            },
+            route=clarified.route,
+            objective=clarified.objective,
+            requested_output=clarified.requested_output,
+            requires_research=clarified.requires_research,
+        )
+
+        archive_refs = dialogue_runtime_service.archive_dialogue_artifacts(request, intent=intent)
+        evidence_bundle = None
+        failure = None
+        workflow_result: dict[str, Any] = {}
+
+        if clarified.downstream_route == "web_research":
+            workflow_result = await run_web_research_workflow(WebResearchRequest(query=payload.text))
+            evidence_bundle = build_evidence_bundle(
+                task_id=task.id,
+                request_id=intent.request_id,
+                workflow_result=workflow_result,
+                source_policy=clarified.source_policy,
+            )
+            archive_refs.extend(dialogue_runtime_service.archive_dialogue_artifacts(request, evidence_bundle=evidence_bundle))
+        elif clarified.downstream_route == "intel_update":
+            workflow_result = await run_intel_update(request=request, db=db)
+            latest = await get_latest_proposal(db=db)
+            workflow_result = {**workflow_result, "proposal": latest.model_dump(mode="json")}
+
+        answer_text, conclusion_data = synthesize_governed_answer(
+            text=payload.text,
+            clarified=clarified,
+            workflow_result=workflow_result,
+        )
+        if conclusion_data["fallback_used"]:
+            failure = dialogue_runtime_service.build_failure(
+                task_id=task.id,
+                request_id=intent.request_id,
+                stage=str(conclusion_data["failure_stage"] or "research"),
+                cause_category="weak_evidence",
+                fallback_behavior="return bounded uncertainty",
+                retryable=True,
+                metadata={"downstream_route": clarified.downstream_route},
+            )
+            archive_refs.extend(dialogue_runtime_service.archive_dialogue_artifacts(request, failure=failure))
+
+        conclusion = dialogue_runtime_service.build_conclusion(
+            task_id=task.id,
+            request_id=intent.request_id,
+            summary=answer_text,
+            key_points=conclusion_data["key_points"],
+            risks=conclusion_data["risks"],
+            recommended_action="research" if clarified.requires_research else "notify",
+            confidence=conclusion_data["confidence"],
+            evidence_refs=conclusion_data["evidence_refs"],
+            metadata={"downstream_route": clarified.downstream_route, "source_policy": clarified.source_policy},
+        )
+        archive_refs.extend(dialogue_runtime_service.archive_dialogue_artifacts(request, conclusion=conclusion))
+
+        reply = dialogue_runtime_service.build_reply(
+            task_id=task.id,
+            request_id=intent.request_id,
+            route="governed_dialogue",
+            answer_text=answer_text,
+            archive_refs=archive_refs,
+            fallback_used=conclusion_data["fallback_used"],
+            failure_stage=conclusion_data["failure_stage"],
+            metadata={"requested_output": clarified.requested_output},
+        )
+        archive_refs.extend(dialogue_runtime_service.archive_dialogue_artifacts(request, reply=reply))
+        reply.archive_refs = archive_refs
+
+        summary = "\n".join(
+            part
+            for part in (
+                decision_summary,
+                reply.answer_text,
+            )
+            if part
+        )
+        workflow_view = {
+            "status": workflow_result.get("status", "success"),
+            "downstream_route": clarified.downstream_route,
+            "source_policy": clarified.source_policy,
+            "result_count": workflow_result.get("result_count"),
+        }
+        return DiscordMessageResponse(
+            route="governed_dialogue",
+            summary=summary,
+            task=TaskRead.model_validate(task, from_attributes=True).model_dump(mode="json"),
+            workflow=workflow_view,
+        )

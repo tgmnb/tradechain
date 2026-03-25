@@ -121,16 +121,16 @@ def dispatch_discord_message(text: str) -> DispatchDecision:
 
     if _matches_any(lowered, RESEARCH_PATTERNS):
         return DispatchDecision(
-            route="intel_update",
+            route="governed_dialogue",
             activate_chain=True,
-            summary="Politburo agent escalated this request into the research workflow.",
+            summary="Politburo agent escalated this request into the governed dialogue workflow.",
         )
 
     if _matches_any(lowered, WEB_RESEARCH_PATTERNS):
         return DispatchDecision(
-            route="web_research",
+            route="governed_dialogue",
             activate_chain=True,
-            summary="Politburo agent escalated this request into the web research workflow.",
+            summary="Politburo agent escalated this request into the governed dialogue workflow.",
         )
 
     return DispatchDecision(
