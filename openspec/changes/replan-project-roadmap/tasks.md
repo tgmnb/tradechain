@@ -12,8 +12,8 @@
 
 ## 3. Platform Hardening Wave
 
-- [ ] 3.1 Add smoke and integration coverage for the currently runnable chains.
-- [ ] 3.2 Add cross-service observability and failure tracing checks for workflow hand-offs.
+- [x] 3.1 Add smoke and integration coverage for the currently runnable chains.
+- [x] 3.2 Add cross-service observability and failure tracing checks for workflow hand-offs.
 - [x] 3.3 Define deployment-readiness checks for provider connectivity, migrations, and archive persistence.
 
 ## 4. Adoption

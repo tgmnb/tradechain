@@ -11,3 +11,24 @@ def test_internal_clients_uses_configured_timeout(monkeypatch) -> None:
 
     assert settings.internal_request_timeout_seconds == 45.0
     assert clients.timeout.read == 45.0
+
+
+def test_internal_clients_propagates_trace_headers(monkeypatch) -> None:
+    monkeypatch.setenv("INTERNAL_SERVICE_API_KEY", "internal-test-key")
+    get_settings.cache_clear()
+
+    class DummyRequest:
+        headers = {
+            "X-Request-ID": "req-123",
+            "X-Actor": "discord-bot",
+        }
+
+    clients = InternalClients()
+    headers = clients.headers_from_request(DummyRequest(), chain_type="major_task")
+
+    assert headers == {
+        "X-Request-ID": "req-123",
+        "X-Chain-Type": "major_task",
+        "X-Actor": "discord-bot",
+        "X-API-Key": "internal-test-key",
+    }
