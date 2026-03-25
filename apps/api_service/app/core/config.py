@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     web_search_base_url: str = Field(default="https://www.bing.com/search")
     web_search_result_limit: int = Field(default=5)
     web_search_fetch_page_limit: int = Field(default=3)
+    governed_dialogue_enabled: bool = Field(default=True)
 
 
 @lru_cache

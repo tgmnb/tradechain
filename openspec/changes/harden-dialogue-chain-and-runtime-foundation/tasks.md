@@ -13,11 +13,11 @@
 
 ## 3. Evaluation and Hardening
 
-- [ ] 3.1 Create a dialogue-chain evaluation set from real prompts, including current known bad cases.
-- [ ] 3.2 Add regression checks for task clarification quality, evidence relevance, artifact completeness, and final-answer usefulness.
-- [ ] 3.3 Add replay and observability tooling for dialogue runs so failures can be inspected end to end.
+- [x] 3.1 Create a dialogue-chain evaluation set from real prompts, including current known bad cases.
+- [x] 3.2 Add regression checks for task clarification quality, evidence relevance, artifact completeness, and final-answer usefulness.
+- [x] 3.3 Add replay and observability tooling for dialogue runs so failures can be inspected end to end.
 
 ## 4. Rollout Sequence
 
-- [ ] 4.1 Introduce the governed dialogue chain behind a controlled rollout path that can fall back to the current baseline routes.
-- [ ] 4.2 Update local runbooks, readiness docs, and follow-on planning to treat the dialogue chain as the primary production-facing quality gate.
+- [x] 4.1 Introduce the governed dialogue chain behind a controlled rollout path that can fall back to the current baseline routes.
+- [x] 4.2 Update local runbooks, readiness docs, and follow-on planning to treat the dialogue chain as the primary production-facing quality gate.

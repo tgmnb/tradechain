@@ -32,6 +32,7 @@ Progress to the next wave should be decided by workflow readiness and operationa
 
 Current workflow readiness is:
 
+- `governed_dialogue`: runnable primary quality gate for natural-language user requests, with clarification, controlled downstream delegation, archived dialogue artifacts, and bounded fallback to baseline routes when rollout is disabled or evidence is weak
 - `intel_update`: runnable, with event -> proposal -> archive loop available through API and Discord hand-off
 - `daily_preopen`: runnable, with proposal -> research -> strategy -> trading plan loop available through the current planning path
 - `major_task`: runnable baseline, but still depends on the same downstream planning quality and governance calibration as the proposal/planning stack
@@ -48,6 +49,7 @@ Readiness for each workflow should be evaluated using three gates:
 
 Current external entrypoint coverage is:
 
+- `governed_dialogue`: Discord/API natural-language entry, controlled rollout via `GOVERNED_DIALOGUE_ENABLED`, with traceable request and conversation metadata in the workflow view
 - `intel_update`: API route, Discord hand-off, n8n workflow
 - `daily_preopen`: API route, n8n workflow
 - `major_task`: API route, Discord task creation path, n8n workflow

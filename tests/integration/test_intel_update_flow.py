@@ -615,6 +615,9 @@ async def test_politburo_research_query_prefers_web_research() -> None:
     assert "网页检索" not in body["summary"]
     assert "example.gov" in body["summary"]
     assert body["workflow"]["downstream_route"] == "web_research"
+    assert body["workflow"]["request_id"]
+    assert body["workflow"]["conversation_id"]
+    assert body["workflow"]["objective"]
 
 
 @pytest.mark.anyio
@@ -669,6 +672,64 @@ async def test_governed_dialogue_bad_case_avoids_raw_search_dump() -> None:
     assert "Task `" not in body["summary"]
     assert "result_count" not in body["summary"]
     assert "不直接下结论" in body["summary"]
+
+
+@pytest.mark.anyio
+async def test_governed_dialogue_can_fall_back_to_baseline_route_when_disabled(monkeypatch) -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    agent_api.db_session_factory = TestingSessionLocal
+    transport = httpx.ASGITransport(app=app)
+    headers = {"X-API-Key": "external-dev-key"}
+
+    original_run_web_research = agent_api.run_web_research_workflow
+    original_get_settings = agent_api.get_settings
+
+    async def fake_run_web_research_workflow(payload):
+        return {
+            "status": "success",
+            "query": payload.query,
+            "result_count": 1,
+            "results": [{"title": "Fallback result", "url": "https://example.gov/policy", "excerpt": "Fallback"}],
+            "summary": "围绕问题做了网页检索。",
+        }
+
+    class DummySettings:
+        governed_dialogue_enabled = False
+
+    agent_api.run_web_research_workflow = fake_run_web_research_workflow
+    agent_api.get_settings = lambda: DummySettings()
+
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            response = await client.post(
+                "/v1/agent/discord-message",
+                headers=headers,
+                json={
+                    "text": "你研究一下，美国的加降息情况",
+                    "user_name": "tester",
+                    "user_id": "1",
+                    "channel_id": "1",
+                    "guild_id": "1",
+                },
+            )
+    finally:
+        agent_api.run_web_research_workflow = original_run_web_research
+        agent_api.get_settings = original_get_settings
+        agent_api.db_session_factory = agent_api.SessionLocal
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["route"] == "web_research"
+    assert "rollout is disabled" in body["summary"]
 
 
 @pytest.mark.anyio

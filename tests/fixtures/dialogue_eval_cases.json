@@ -1,0 +1,26 @@
+[
+  {
+    "name": "fed-rate-path-bad-case",
+    "prompt": "你研究一下，美国的加降息情况",
+    "expected_route": "governed_dialogue",
+    "expected_downstream_route": "web_research",
+    "expected_source_policy": "macro_policy",
+    "requires_research": true
+  },
+  {
+    "name": "boj-policy-briefing",
+    "prompt": "帮我查一下今天日本央行最新政策消息",
+    "expected_route": "governed_dialogue",
+    "expected_downstream_route": "web_research",
+    "expected_source_policy": "general",
+    "requires_research": true
+  },
+  {
+    "name": "identity-direct-reply",
+    "prompt": "你是谁，你能做什么？",
+    "expected_route": "help",
+    "expected_downstream_route": null,
+    "expected_source_policy": null,
+    "requires_research": false
+  }
+]

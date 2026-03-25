@@ -17,6 +17,7 @@ from apps.api_service.app.api.workflows import (
     run_web_research_workflow,
 )
 from apps.api_service.app.core.security import require_api_key
+from apps.api_service.app.core.config import get_settings
 from apps.api_service.app.db.session import SessionLocal
 from apps.api_service.app.services.dialogue_chain_service import build_evidence_bundle, clarify_dialogue_task, synthesize_governed_answer
 from apps.api_service.app.services.dialogue_runtime_service import dialogue_runtime_service
@@ -164,7 +165,16 @@ async def handle_discord_message(
         )
 
     if decision and decision.activate_chain and decision.route == "governed_dialogue":
-        return await _run_governed_dialogue(payload, request, decision_summary)
+        if get_settings().governed_dialogue_enabled:
+            return await _run_governed_dialogue(payload, request, decision_summary)
+        clarified = clarify_dialogue_task(payload.text)
+        decision_summary = "\n".join(
+            [
+                decision_summary,
+                "Governed dialogue rollout is disabled, so the request fell back to the baseline workflow route.",
+            ]
+        )
+        final_route = clarified.downstream_route or "web_research"
 
     with _db_session() as db:
         task = await create_task(
@@ -361,6 +371,10 @@ async def _run_governed_dialogue(
             "downstream_route": clarified.downstream_route,
             "source_policy": clarified.source_policy,
             "result_count": workflow_result.get("result_count"),
+            "request_id": intent.request_id,
+            "conversation_id": intent.conversation_id,
+            "objective": clarified.objective,
+            "archive_ref_count": len(archive_refs),
         }
         return DiscordMessageResponse(
             route="governed_dialogue",

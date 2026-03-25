@@ -10,13 +10,14 @@
 
 1. `cp .env.example .env`
 2. For offline local work, set `LLM_PROVIDER=heuristic` in `.env`
-3. Preferred bootstrap: `bash scripts/install_local.sh`
-4. Preferred startup: `bash scripts/start_local.sh`
-5. Manual fallback: `docker compose up --build`
-6. Manual migration: `docker compose exec api-service alembic -c sql/migrations/alembic.ini upgrade head`
-7. Optional SQL seed: `docker compose exec postgres psql -U tradechain -d tradechain -f /workspace/sql/seeds/001_skill_versions.sql`
-8. Optional registry projection: `PYTHONPATH=. python scripts/sync_registry_to_db.py`
-9. Optional schema export: `PYTHONPATH=. python scripts/export_contract_schemas.py`
+3. Keep `GOVERNED_DIALOGUE_ENABLED=true` if you want natural-language research prompts to use the new governed dialogue chain
+4. Preferred bootstrap: `bash scripts/install_local.sh`
+5. Preferred startup: `bash scripts/start_local.sh`
+6. Manual fallback: `docker compose up --build`
+7. Manual migration: `docker compose exec api-service alembic -c sql/migrations/alembic.ini upgrade head`
+8. Optional SQL seed: `docker compose exec postgres psql -U tradechain -d tradechain -f /workspace/sql/seeds/001_skill_versions.sql`
+9. Optional registry projection: `PYTHONPATH=. python scripts/sync_registry_to_db.py`
+10. Optional schema export: `PYTHONPATH=. python scripts/export_contract_schemas.py`
 
 ## Python Validation Environment
 
@@ -45,6 +46,7 @@ Validated local commands:
 - Nightly improvement baseline: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/workflows/nightly-improvement/run -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"minimum_score_threshold":75,"approval_role":"improvement_officer"}'`
 - Registry view: `curl --noproxy '*' http://127.0.0.1:8000/v1/registry/souls -H 'X-API-Key: external-dev-key'`
 - Politburo direct reply: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/agent/discord-message -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"text":"你是谁","user_name":"local","user_id":"local","channel_id":"local","guild_id":"local"}'`
+- Governed dialogue smoke: `curl --noproxy '*' -X POST http://127.0.0.1:8000/v1/agent/discord-message -H 'X-API-Key: external-dev-key' -H 'Content-Type: application/json' -d '{"text":"你研究一下，美国的加降息情况","user_name":"local","user_id":"local","channel_id":"local","guild_id":"local"}'`
 
 ## Soul / Skill Authoring
 
