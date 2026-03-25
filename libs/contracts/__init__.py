@@ -4,7 +4,7 @@ from libs.contracts.event import EventIn, EventNormalized
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse, GraphState
 from libs.contracts.proposal import ProposalDraft, ProposalDraftRequest, ProposalFinal
 from libs.contracts.review import PostcloseReview, ReviewRecord
-from libs.contracts.watch import WatchObservation
+from libs.contracts.watch import IntradayWatchRequest, MarketSnapshot, WatchObservation
 from libs.contracts.task import TaskCreate, TaskRead
 from libs.contracts.trading import ExecutionRecord, ExecutionRecordCreateRequest, TradingPlan
 
@@ -28,5 +28,7 @@ __all__ = [
     "TradingPlan",
     "ExecutionRecord",
     "ExecutionRecordCreateRequest",
+    "IntradayWatchRequest",
+    "MarketSnapshot",
     "WatchObservation",
 ]

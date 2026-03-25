@@ -17,7 +17,7 @@ from libs.contracts.review import PostcloseReview, ReviewRecord
 from libs.contracts.strategy import Strategy, StrategyDraftRequest
 from libs.contracts.task import TaskCreate, TaskRead
 from libs.contracts.trading import ExecutionRecord, ExecutionRecordCreateRequest, TradingPlan, TradingPlanDraftRequest
-from libs.contracts.watch import WatchObservation
+from libs.contracts.watch import IntradayWatchRequest, MarketSnapshot, WatchObservation
 
 MODELS = {
     "TaskCreate": TaskCreate,
@@ -44,6 +44,8 @@ MODELS = {
     "Strategy": Strategy,
     "TradingPlanDraftRequest": TradingPlanDraftRequest,
     "TradingPlan": TradingPlan,
+    "MarketSnapshot": MarketSnapshot,
+    "IntradayWatchRequest": IntradayWatchRequest,
     "WatchObservation": WatchObservation,
     "ExecutionRecordCreateRequest": ExecutionRecordCreateRequest,
     "ExecutionRecord": ExecutionRecord,

@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "MarketSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Asset",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "last_price": {
+          "exclusiveMinimum": 0,
+          "title": "Last Price",
+          "type": "number"
+        },
+        "prev_close": {
+          "exclusiveMinimum": 0,
+          "title": "Prev Close",
+          "type": "number"
+        },
+        "session_high": {
+          "exclusiveMinimum": 0,
+          "title": "Session High",
+          "type": "number"
+        },
+        "session_low": {
+          "exclusiveMinimum": 0,
+          "title": "Session Low",
+          "type": "number"
+        },
+        "volume": {
+          "minimum": 0,
+          "title": "Volume",
+          "type": "number"
+        },
+        "average_volume": {
+          "exclusiveMinimum": 0,
+          "title": "Average Volume",
+          "type": "number"
+        },
+        "source": {
+          "default": "mock_replay",
+          "maxLength": 50,
+          "title": "Source",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "asset",
+        "observed_at",
+        "last_price",
+        "prev_close",
+        "session_high",
+        "session_low",
+        "volume",
+        "average_volume"
+      ],
+      "title": "MarketSnapshot",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "input_mode": {
+      "default": "mock_replay",
+      "maxLength": 50,
+      "title": "Input Mode",
+      "type": "string"
+    },
+    "snapshots": {
+      "items": {
+        "$ref": "#/$defs/MarketSnapshot"
+      },
+      "title": "Snapshots",
+      "type": "array"
+    },
+    "price_change_threshold_pct": {
+      "default": 2.0,
+      "exclusiveMinimum": 0,
+      "title": "Price Change Threshold Pct",
+      "type": "number"
+    },
+    "session_range_threshold_pct": {
+      "default": 3.0,
+      "exclusiveMinimum": 0,
+      "title": "Session Range Threshold Pct",
+      "type": "number"
+    },
+    "volume_spike_ratio": {
+      "default": 2.0,
+      "exclusiveMinimum": 0,
+      "title": "Volume Spike Ratio",
+      "type": "number"
+    },
+    "suppression_window_minutes": {
+      "default": 15,
+      "maximum": 240,
+      "minimum": 1,
+      "title": "Suppression Window Minutes",
+      "type": "integer"
+    },
+    "routing_targets": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Routing Targets",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "title": "IntradayWatchRequest",
+  "type": "object"
+}
