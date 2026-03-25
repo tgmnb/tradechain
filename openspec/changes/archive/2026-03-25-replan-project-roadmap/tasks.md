@@ -19,4 +19,4 @@
 ## 4. Adoption
 
 - [x] 4.1 Use this OpenSpec change as the baseline when creating the next implementation proposal.
-- [ ] 4.2 Archive this change only after the roadmap and readiness criteria are reflected in follow-on implementation work.
+- [x] 4.2 Archive this change only after the roadmap and readiness criteria are reflected in follow-on implementation work.
