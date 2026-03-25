@@ -10,6 +10,7 @@ from apps.api_service.app.core.security import require_api_key
 from apps.api_service.app.db.session import get_db
 from apps.api_service.app.services.intraday_watch_service import run_intraday_watch as execute_intraday_watch
 from apps.api_service.app.services.internal_clients import internal_clients
+from apps.api_service.app.services.nightly_improvement_service import run_nightly_improvement as execute_nightly_improvement
 from apps.api_service.app.services.policy_crawl_service import run_policy_crawl
 from apps.api_service.app.services.web_research_service import run_web_research
 from apps.api_service.app.services.runtime_objects import (
@@ -28,6 +29,7 @@ from apps.api_service.app.services.runtime_objects import (
 from apps.api_service.app.services.runtime_profiles import planning_profile_for, proposal_profile_for
 from libs.contracts.enums import TaskStatus
 from libs.contracts.event import EventIn, build_event_dedup_key
+from libs.contracts.improvement import NightlyImprovementRequest
 from libs.contracts.watch import IntradayWatchRequest
 from libs.db.models import EventModel, ExecutionRecordModel, ProposalModel, ReviewModel, TaskModel, TradingPlanModel
 
@@ -376,9 +378,8 @@ async def run_postclose_review(request: Request, db: Session = Depends(get_db)) 
 
 
 @router.post("/nightly-improvement/run")
-async def run_nightly_improvement_placeholder() -> dict:
-    return {
-        "status": "blocked",
-        "reason": "evaluation_pipeline_required",
-        "message": "nightly-improvement already has improvement_ticket_skill in registry, but still needs evaluation signals, scores, and approval workflow before it can run.",
-    }
+async def run_nightly_improvement_workflow(
+    payload: NightlyImprovementRequest | None = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    return execute_nightly_improvement(db, payload)

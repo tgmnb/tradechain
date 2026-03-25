@@ -14,6 +14,7 @@ from apps.api_service.app.api.reviews import get_latest_review, list_reviews_by_
 from apps.api_service.app.api.workflows import run_postclose_review
 from apps.api_service.app.api.workflows import run_intel_update
 from apps.api_service.app.api.workflows import run_major_task
+from apps.api_service.app.api.workflows import run_nightly_improvement_workflow
 from apps.api_service.app.main import app
 from apps.api_service.app.services.internal_clients import internal_clients
 from libs.contracts.trading import ExecutionRecordCreateRequest
@@ -82,15 +83,10 @@ async def test_placeholder_workflows_report_current_blockers() -> None:
     class DummyRequest:
         headers = {"X-API-Key": "external-dev-key", "X-Actor": "test"}
 
-    transport = httpx.ASGITransport(app=app)
-    headers = {"X-API-Key": "external-dev-key"}
-
     try:
         with TestingSessionLocal() as db:
             postclose = await run_postclose_review(DummyRequest(), db=db)
-
-        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
-            nightly = await client.post("/v1/workflows/nightly-improvement/run", headers=headers)
+            nightly = await run_nightly_improvement_workflow(db=db)
     finally:
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
@@ -98,9 +94,8 @@ async def test_placeholder_workflows_report_current_blockers() -> None:
     assert postclose["status"] == "blocked"
     assert postclose["reason"] == "no_trading_plan"
 
-    assert nightly.status_code == 200
-    assert nightly.json()["reason"] == "evaluation_pipeline_required"
-    assert "improvement_ticket_skill" in nightly.json()["message"]
+    assert nightly["status"] == "blocked"
+    assert nightly["reason"] == "no_historical_evidence"
 
 
 @pytest.mark.anyio
@@ -418,6 +413,122 @@ async def test_improvement_api_reads_latest_score_and_ticket() -> None:
     assert latest_score.total_score == 81
     assert latest_ticket.target_name == "execution_compare_skill"
     assert latest_ticket.status == "pending_approval"
+
+
+@pytest.mark.anyio
+async def test_nightly_improvement_generates_ticket_from_low_score() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    with TestingSessionLocal() as db:
+        db.add(
+            AgentScoreModel(
+                agent_name="review_graph",
+                period_start=date(2026, 3, 20),
+                period_end=date(2026, 3, 24),
+                total_score=61,
+                detail_json={"precision_score": 58, "stability_score": 63},
+            )
+        )
+        db.add(
+            ReviewModel(
+                object_type="trading_plan",
+                object_id=uuid4(),
+                reviewer_type="agent",
+                reviewer_name="review_graph",
+                decision="reject",
+                comments="Deviation grouping was too shallow",
+                score=55,
+            )
+        )
+        db.commit()
+
+    try:
+        with TestingSessionLocal() as db:
+            response = await run_nightly_improvement_workflow(
+                db=db,
+                payload={"minimum_score_threshold": 75, "approval_role": "improvement_officer"},
+            )
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    assert response["status"] == "success"
+    assert response["generated_ticket_count"] == 1
+    ticket = response["tickets"][0]
+    assert ticket["target_type"] == "agent"
+    assert ticket["target_name"] == "review_graph"
+    assert ticket["status"] == "pending_approval"
+    assert ticket["proposed_fix"]["approval_role"] == "improvement_officer"
+    assert ticket["root_cause"]["evidence_summary"]["rejected_review_count"] == 1
+
+
+@pytest.mark.anyio
+async def test_nightly_improvement_transitions_ticket_states() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+
+    ticket_id = uuid4()
+    with TestingSessionLocal() as db:
+        db.add(
+            ImprovementTicketModel(
+                id=ticket_id,
+                target_type="skill",
+                target_name="improvement_ticket_skill",
+                source_period_start=date(2026, 3, 20),
+                source_period_end=date(2026, 3, 24),
+                issue_summary="Need stricter nightly validation",
+                impact_description="Weak tickets are reaching approval",
+                root_cause={"items": ["insufficient aggregation"]},
+                proposed_fix={"items": ["tighten thresholds"]},
+                status="pending_approval",
+            )
+        )
+        db.commit()
+
+    try:
+        with TestingSessionLocal() as db:
+            approved = await run_nightly_improvement_workflow(
+                db=db,
+                payload={
+                    "transition": {
+                        "ticket_id": str(ticket_id),
+                        "status": "approved",
+                        "actor": "ops_lead",
+                    }
+                },
+            )
+            applied = await run_nightly_improvement_workflow(
+                db=db,
+                payload={
+                    "transition": {
+                        "ticket_id": str(ticket_id),
+                        "status": "applied",
+                        "actor": "ops_lead",
+                    }
+                },
+            )
+    finally:
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+    assert approved["status"] == "success"
+    assert approved["ticket"]["status"] == "approved"
+    assert approved["ticket"]["approved_by"] == "ops_lead"
+
+    assert applied["status"] == "success"
+    assert applied["ticket"]["status"] == "applied"
+    assert applied["ticket"]["approved_by"] == "ops_lead"
 
 
 @pytest.mark.anyio

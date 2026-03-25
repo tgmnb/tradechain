@@ -15,5 +15,5 @@
 
 ## 4. Baseline Implementation
 
-- [ ] 4.1 Replace the current blocked placeholder with a baseline nightly aggregation path.
-- [ ] 4.2 Add tests covering no-input, ticket generation, and approval-state transitions.
+- [x] 4.1 Replace the current blocked placeholder with a baseline nightly aggregation path.
+- [x] 4.2 Add tests covering no-input, ticket generation, and approval-state transitions.
