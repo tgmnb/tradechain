@@ -1,3 +1,4 @@
+from libs.contracts.dialogue import DialogueIntent, EvidenceBundle
 from libs.contracts.event import EventIn
 from libs.contracts.graph import GraphRunResponse
 from libs.contracts.proposal import ProposalFinal
@@ -50,3 +51,13 @@ def test_registry_and_planning_contracts_expose_expected_fields() -> None:
     assert "summary" in ResearchReport.model_json_schema().get("properties", {})
     assert "priority_score" in Strategy.model_json_schema().get("properties", {})
     assert "monitoring_points" in TradingPlan.model_json_schema().get("properties", {})
+
+
+def test_dialogue_contracts_expose_traceable_fields() -> None:
+    intent_props = DialogueIntent.model_json_schema().get("properties", {})
+    evidence_props = EvidenceBundle.model_json_schema().get("properties", {})
+
+    assert "request_id" in intent_props
+    assert "objective" in intent_props
+    assert "source_policy" in evidence_props
+    assert "failure_state" in evidence_props

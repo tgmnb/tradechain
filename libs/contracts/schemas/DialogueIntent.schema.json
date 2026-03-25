@@ -1,0 +1,97 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "task_id": {
+      "format": "uuid",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "request_id": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "conversation_id": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "user_text": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "User Text",
+      "type": "string"
+    },
+    "route": {
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Route",
+      "type": "string"
+    },
+    "objective": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Objective",
+      "type": "string"
+    },
+    "topic_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Topic Scope",
+      "type": "array"
+    },
+    "constraints": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Constraints",
+      "type": "array"
+    },
+    "requested_output": {
+      "default": "briefing",
+      "maxLength": 100,
+      "title": "Requested Output",
+      "type": "string"
+    },
+    "requires_research": {
+      "default": false,
+      "title": "Requires Research",
+      "type": "boolean"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "task_id",
+    "request_id",
+    "conversation_id",
+    "user_text",
+    "route",
+    "objective",
+    "created_at"
+  ],
+  "title": "DialogueIntent",
+  "type": "object"
+}

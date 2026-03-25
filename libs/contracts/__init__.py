@@ -1,3 +1,4 @@
+from libs.contracts.dialogue import ConclusionDraft, DialogueFailureState, DialogueIntent, DialogueReply, EvidenceBundle, EvidenceItem
 from libs.contracts.improvement import AgentScore, ImprovementTicket, ImprovementTicketTransitionRequest, NightlyImprovementRequest
 from libs.contracts.archive import ArchiveCreate, ArchiveRef
 from libs.contracts.event import EventIn, EventNormalized
@@ -12,8 +13,14 @@ __all__ = [
     "AgentScore",
     "ArchiveCreate",
     "ArchiveRef",
+    "ConclusionDraft",
+    "DialogueFailureState",
+    "DialogueIntent",
+    "DialogueReply",
     "EventIn",
     "EventNormalized",
+    "EvidenceBundle",
+    "EvidenceItem",
     "GraphRunRequest",
     "GraphRunResponse",
     "GraphState",

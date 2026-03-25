@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "source_domain": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Source Domain",
+          "type": "string"
+        },
+        "source_type": {
+          "default": "web",
+          "maxLength": 50,
+          "title": "Source Type",
+          "type": "string"
+        },
+        "trust_level": {
+          "default": "medium",
+          "maxLength": 20,
+          "title": "Trust Level",
+          "type": "string"
+        },
+        "excerpt": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "title",
+        "url",
+        "source_domain"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "task_id": {
+      "format": "uuid",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "request_id": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "query": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Query",
+      "type": "string"
+    },
+    "source_policy": {
+      "default": "general",
+      "maxLength": 100,
+      "title": "Source Policy",
+      "type": "string"
+    },
+    "rewrite_strategy": {
+      "default": "direct",
+      "maxLength": 100,
+      "title": "Rewrite Strategy",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/EvidenceItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "failure_state": {
+      "anyOf": [
+        {
+          "maxLength": 50,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure State"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "task_id",
+    "request_id",
+    "query",
+    "created_at"
+  ],
+  "title": "EvidenceBundle",
+  "type": "object"
+}

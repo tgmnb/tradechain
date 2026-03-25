@@ -6,6 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from libs.contracts.dialogue import (
+    ConclusionDraft,
+    DialogueFailureState,
+    DialogueIntent,
+    DialogueReply,
+    EvidenceBundle,
+    EvidenceItem,
+)
 from libs.contracts.archive import ArchiveCreate, ArchiveRef
 from libs.contracts.event import EventIn, EventNormalized
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse
@@ -27,6 +35,12 @@ from libs.contracts.watch import IntradayWatchRequest, MarketSnapshot, WatchObse
 MODELS = {
     "TaskCreate": TaskCreate,
     "TaskRead": TaskRead,
+    "DialogueIntent": DialogueIntent,
+    "EvidenceItem": EvidenceItem,
+    "EvidenceBundle": EvidenceBundle,
+    "ConclusionDraft": ConclusionDraft,
+    "DialogueReply": DialogueReply,
+    "DialogueFailureState": DialogueFailureState,
     "AgentScore": AgentScore,
     "NightlyImprovementRequest": NightlyImprovementRequest,
     "EventIn": EventIn,

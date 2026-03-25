@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "task_id": {
+      "format": "uuid",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "request_id": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "stage": {
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Stage",
+      "type": "string"
+    },
+    "cause_category": {
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Cause Category",
+      "type": "string"
+    },
+    "fallback_behavior": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Fallback Behavior",
+      "type": "string"
+    },
+    "retryable": {
+      "default": false,
+      "title": "Retryable",
+      "type": "boolean"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "task_id",
+    "request_id",
+    "stage",
+    "cause_category",
+    "fallback_behavior",
+    "created_at"
+  ],
+  "title": "DialogueFailureState",
+  "type": "object"
+}

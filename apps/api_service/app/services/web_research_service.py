@@ -18,6 +18,33 @@ class SearchCandidate:
     url: str
 
 
+SOURCE_POLICIES = {
+    "macro_policy": [
+        "federalreserve.gov",
+        "treasury.gov",
+        "whitehouse.gov",
+        "bls.gov",
+        "bea.gov",
+        "imf.org",
+        "worldbank.org",
+        "reuters.com",
+        "bloomberg.com",
+        "wsj.com",
+        "ft.com",
+    ],
+    "central_bank": [
+        "federalreserve.gov",
+        "ecb.europa.eu",
+        "bankofengland.co.uk",
+        "boj.or.jp",
+        "rba.gov.au",
+        "reuters.com",
+        "bloomberg.com",
+    ],
+    "general": [],
+}
+
+
 class _AnchorParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -49,7 +76,8 @@ class _AnchorParser(HTMLParser):
 def run_web_research(*, query: str, max_results: int | None = None) -> dict:
     settings = get_settings()
     limit = max_results or settings.web_search_result_limit
-    normalized_query = _normalize_query(query)
+    source_policy = _infer_source_policy(query)
+    normalized_query, rewrite_strategy = _normalize_query(query, source_policy=source_policy)
     search_url = _build_search_url(
         normalized_query,
         settings.web_search_base_url,
@@ -63,6 +91,8 @@ def run_web_research(*, query: str, max_results: int | None = None) -> dict:
             "status": "failed",
             "query": normalized_query,
             "provider": settings.web_search_provider,
+            "source_policy": source_policy,
+            "rewrite_strategy": rewrite_strategy,
             "result_count": 0,
             "results": [],
             "summary": f"网页检索暂时失败：{exc}",
@@ -72,18 +102,20 @@ def run_web_research(*, query: str, max_results: int | None = None) -> dict:
         fetched.body,
         limit=limit,
         provider=settings.web_search_provider,
+        allowed_domains=SOURCE_POLICIES.get(source_policy, []),
     )
 
     results: list[dict] = []
     for candidate in candidates[: settings.web_search_fetch_page_limit]:
         try:
-            page = fetch_url(candidate.url)
+            page = fetch_url(candidate.url, allowed_domains=SOURCE_POLICIES.get(source_policy, []))
             excerpt = _extract_excerpt(page.body)
             results.append(
                 {
                     "title": candidate.title,
                     "url": candidate.url,
                     "excerpt": excerpt,
+                    "source_domain": urlparse(candidate.url).hostname or "",
                 }
             )
         except FetchRuntimeError:
@@ -92,6 +124,7 @@ def run_web_research(*, query: str, max_results: int | None = None) -> dict:
                     "title": candidate.title,
                     "url": candidate.url,
                     "excerpt": "",
+                    "source_domain": urlparse(candidate.url).hostname or "",
                 }
             )
 
@@ -100,6 +133,8 @@ def run_web_research(*, query: str, max_results: int | None = None) -> dict:
         "status": "success",
         "query": normalized_query,
         "provider": settings.web_search_provider,
+        "source_policy": source_policy,
+        "rewrite_strategy": rewrite_strategy,
         "result_count": len(results),
         "results": results,
         "summary": summary,
@@ -113,9 +148,9 @@ def _build_search_url(query: str, base_url: str, *, provider: str) -> str:
     return f"{base_url}{separator}q={quote_plus(query)}"
 
 
-def _parse_search_results(body: str, *, limit: int, provider: str) -> list[SearchCandidate]:
+def _parse_search_results(body: str, *, limit: int, provider: str, allowed_domains: list[str]) -> list[SearchCandidate]:
     if provider == "bing_html":
-        return _parse_bing_rss_results(body, limit=limit)
+        return _parse_bing_rss_results(body, limit=limit, allowed_domains=allowed_domains)
 
     parser = _AnchorParser()
     parser.feed(body)
@@ -132,6 +167,8 @@ def _parse_search_results(body: str, *, limit: int, provider: str) -> list[Searc
             continue
         if _is_internal_search_link(url, title):
             continue
+        if allowed_domains and not _domain_allowed(url, allowed_domains):
+            continue
         seen_urls.add(url)
         results.append(SearchCandidate(title=title, url=url))
         if len(results) >= limit:
@@ -139,7 +176,7 @@ def _parse_search_results(body: str, *, limit: int, provider: str) -> list[Searc
     return results
 
 
-def _parse_bing_rss_results(body: str, *, limit: int) -> list[SearchCandidate]:
+def _parse_bing_rss_results(body: str, *, limit: int, allowed_domains: list[str]) -> list[SearchCandidate]:
     try:
         root = ElementTree.fromstring(body.lstrip())
     except ElementTree.ParseError:
@@ -153,6 +190,8 @@ def _parse_bing_rss_results(body: str, *, limit: int) -> list[SearchCandidate]:
         if not title or not url or url in seen_urls:
             continue
         if _is_internal_search_link(url, title):
+            continue
+        if allowed_domains and not _domain_allowed(url, allowed_domains):
             continue
         seen_urls.add(url)
         results.append(SearchCandidate(title=title, url=url))
@@ -211,14 +250,19 @@ def _decode_bing_target(encoded: str) -> str | None:
         return None
 
 
-def _normalize_query(query: str) -> str:
+def _normalize_query(query: str, *, source_policy: str) -> tuple[str, str]:
     normalized = " ".join(query.strip().split())
+    rewrite_strategy = "direct"
     for phrase in (
         "帮我查一下",
         "帮我查",
         "帮我搜一下",
         "帮我搜",
         "帮我看看",
+        "你研究一下",
+        "研究一下",
+        "请研究一下",
+        "麻烦研究一下",
         "查一下",
         "搜一下",
         "查一查",
@@ -232,14 +276,39 @@ def _normalize_query(query: str) -> str:
         "bank of japan": "Bank of Japan monetary policy site:boj.or.jp",
         "美联储": "Federal Reserve policy site:federalreserve.gov",
         "联储": "Federal Reserve policy site:federalreserve.gov",
+        "美国加降息": "Federal Reserve rate hike rate cut outlook site:federalreserve.gov OR site:reuters.com OR site:bloomberg.com",
+        "美国的加降息": "Federal Reserve rate hike rate cut outlook site:federalreserve.gov OR site:reuters.com OR site:bloomberg.com",
+        "加降息": "Federal Reserve rate hike rate cut outlook site:federalreserve.gov OR site:reuters.com OR site:bloomberg.com",
+        "利率决议": "Federal Reserve rate decision site:federalreserve.gov OR site:reuters.com",
         "欧洲央行": "European Central Bank monetary policy site:ecb.europa.eu",
         "英国央行": "Bank of England monetary policy site:bankofengland.co.uk",
     }
     lowered = normalized.lower()
     for pattern, replacement in hints.items():
         if pattern in lowered or pattern in normalized:
-            return replacement
-    return normalized
+            return replacement, "hint_rewrite"
+
+    if source_policy == "macro_policy" and ("美国" in normalized or "fed" in lowered or "federal reserve" in lowered):
+        return (
+            f"{normalized} site:federalreserve.gov OR site:reuters.com OR site:bloomberg.com OR site:wsj.com",
+            "macro_policy_rewrite",
+        )
+    return normalized, rewrite_strategy
+
+
+def _infer_source_policy(query: str) -> str:
+    lowered = query.lower()
+    if any(pattern in lowered for pattern in ("fed", "federal reserve", "rate hike", "rate cut", "ecb", "boj", "bank of england")):
+        return "central_bank"
+    if any(pattern in query for pattern in ("美联储", "加降息", "利率", "宏观", "政策", "央行", "通胀", "就业")):
+        return "macro_policy"
+    return "general"
+
+
+def _domain_allowed(url: str, allowed_domains: list[str]) -> bool:
+    hostname = (urlparse(url).hostname or "").lower()
+    normalized = [domain.lower().lstrip(".") for domain in allowed_domains]
+    return any(hostname == domain or hostname.endswith(f".{domain}") for domain in normalized)
 
 
 def _build_summary(*, query: str, results: list[dict]) -> str:

@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "maxLength": 300,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "url": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    },
+    "source_domain": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Source Domain",
+      "type": "string"
+    },
+    "source_type": {
+      "default": "web",
+      "maxLength": 50,
+      "title": "Source Type",
+      "type": "string"
+    },
+    "trust_level": {
+      "default": "medium",
+      "maxLength": 20,
+      "title": "Trust Level",
+      "type": "string"
+    },
+    "excerpt": {
+      "default": "",
+      "maxLength": 2000,
+      "title": "Excerpt",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "title",
+    "url",
+    "source_domain"
+  ],
+  "title": "EvidenceItem",
+  "type": "object"
+}
