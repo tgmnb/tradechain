@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "ticket_id": {
+      "format": "uuid",
+      "title": "Ticket Id",
+      "type": "string"
+    },
+    "status": {
+      "maxLength": 30,
+      "minLength": 1,
+      "title": "Status",
+      "type": "string"
+    },
+    "actor": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Actor",
+      "type": "string"
+    }
+  },
+  "required": [
+    "ticket_id",
+    "status",
+    "actor"
+  ],
+  "title": "ImprovementTicketTransitionRequest",
+  "type": "object"
+}

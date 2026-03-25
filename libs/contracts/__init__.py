@@ -1,4 +1,4 @@
-from libs.contracts.improvement import AgentScore, ImprovementTicket
+from libs.contracts.improvement import AgentScore, ImprovementTicket, ImprovementTicketTransitionRequest, NightlyImprovementRequest
 from libs.contracts.archive import ArchiveCreate, ArchiveRef
 from libs.contracts.event import EventIn, EventNormalized
 from libs.contracts.graph import GraphRunRequest, GraphRunResponse, GraphState
@@ -18,11 +18,13 @@ __all__ = [
     "GraphRunResponse",
     "GraphState",
     "ImprovementTicket",
+    "ImprovementTicketTransitionRequest",
     "ProposalDraft",
     "ProposalDraftRequest",
     "ProposalFinal",
     "PostcloseReview",
     "ReviewRecord",
+    "NightlyImprovementRequest",
     "TaskCreate",
     "TaskRead",
     "TradingPlan",

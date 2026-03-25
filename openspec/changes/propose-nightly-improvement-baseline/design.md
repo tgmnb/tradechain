@@ -23,6 +23,12 @@ Rationale:
 - 现有平台更接近批处理 than streaming evaluation。
 - nightly aggregation 更容易和现有 n8n / scheduler 结合。
 
+Baseline evidence window:
+- 默认按最近 `7` 天窗口聚合
+- 聚合对象包括 `proposals`、`trading_plans`、`reviews`、`agent_scores`
+- ticket 生成的最低必要评分证据为 `agent_name`、`period_start`、`period_end`、`total_score`
+- `proposals`、`trading_plans`、`reviews` 作为 support evidence 写入 ticket 的 root cause / impact 描述，而不是替代 score 输入
+
 ### 2. Ticket 是核心产物，不直接自动修复
 nightly improvement 的首要产物应是结构化 improvement ticket。
 
@@ -30,12 +36,34 @@ Rationale:
 - 没有 ticket 与审批层，自动修复风险过高。
 - ticket 能沉淀问题类别、影响范围和拟议修复。
 
+Baseline ticket fields:
+- target identity: `target_type`, `target_name`
+- evidence window: `source_period_start`, `source_period_end`
+- problem statement: `issue_summary`, `impact_description`
+- remediation structure: `root_cause`, `proposed_fix`
+- governance: `status`, `approved_by`
+
+Evidence linkage:
+- `root_cause` 记录 score breakdown 与 review evidence
+- `proposed_fix` 记录建议动作与责任审批角色
+- source period 直接对应 nightly aggregation window
+
 ### 3. 审批流必须显式保留人工闸门
 baseline improvement 只能生成建议和待审批状态，不能直接修改运行时配置。
 
 Rationale:
 - 当前系统还没有足够强的离线验证与回滚机制。
 - 人工闸门可以防止误评分导致的连锁改动。
+
+Baseline approval flow:
+- `pending_approval -> approved`
+- `pending_approval -> rejected`
+- `approved -> applied`
+- `rejected` 与 `applied` 视为终态
+
+Approval responsibility:
+- 默认审批责任角色为 `improvement_officer`
+- 离开 `pending_approval` 时必须记录责任 actor
 
 ## Risks / Trade-offs
 

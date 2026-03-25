@@ -24,6 +24,19 @@ class AgentScore(ContractModel):
     created_at: datetime
 
 
+class ImprovementTicketTransitionRequest(ContractModel):
+    ticket_id: UUID
+    status: str = Field(min_length=1, max_length=30)
+    actor: str = Field(min_length=1, max_length=100)
+
+
+class NightlyImprovementRequest(ContractModel):
+    evidence_window_days: int = Field(default=7, ge=1, le=30)
+    minimum_score_threshold: float = Field(default=75.0, ge=0.0, le=100.0)
+    approval_role: str = Field(default="improvement_officer", min_length=1, max_length=100)
+    transition: ImprovementTicketTransitionRequest | None = None
+
+
 class ImprovementTicket(ContractModel):
     id: UUID
     target_type: str = Field(min_length=1, max_length=30)

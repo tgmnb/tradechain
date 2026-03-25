@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "ImprovementTicketTransitionRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket_id": {
+          "format": "uuid",
+          "title": "Ticket Id",
+          "type": "string"
+        },
+        "status": {
+          "maxLength": 30,
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "actor": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Actor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket_id",
+        "status",
+        "actor"
+      ],
+      "title": "ImprovementTicketTransitionRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "evidence_window_days": {
+      "default": 7,
+      "maximum": 30,
+      "minimum": 1,
+      "title": "Evidence Window Days",
+      "type": "integer"
+    },
+    "minimum_score_threshold": {
+      "default": 75.0,
+      "maximum": 100.0,
+      "minimum": 0.0,
+      "title": "Minimum Score Threshold",
+      "type": "number"
+    },
+    "approval_role": {
+      "default": "improvement_officer",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Approval Role",
+      "type": "string"
+    },
+    "transition": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ImprovementTicketTransitionRequest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "title": "NightlyImprovementRequest",
+  "type": "object"
+}
